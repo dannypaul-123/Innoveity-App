@@ -1070,6 +1070,38 @@ class AppState extends ChangeNotifier {
     ),
   };
 
+  /// Validates whether an employee account or identifier is registered in the CRM backend / directory.
+  static bool isEmployeeInCrmBackend(String identifier) {
+    final cleanInput = identifier.trim().toLowerCase();
+    if (cleanInput.isEmpty) return false;
+    for (final entry in userDirectory.entries) {
+      if (entry.key.toLowerCase() == cleanInput ||
+          entry.value.email.toLowerCase() == cleanInput ||
+          entry.value.employeeId.toLowerCase() == cleanInput ||
+          (entry.value.name.toLowerCase() == 'daniel paul' &&
+              (cleanInput == 'dp0345217@gmail.com' || cleanInput == 'danielpaul@enterprise-crm.com'))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Finds and returns the CRM employee profile matching an email or employee ID.
+  static UserProfile? findEmployeeInCrm(String identifier) {
+    final cleanInput = identifier.trim().toLowerCase();
+    if (cleanInput.isEmpty) return null;
+    for (final entry in userDirectory.entries) {
+      if (entry.key.toLowerCase() == cleanInput ||
+          entry.value.email.toLowerCase() == cleanInput ||
+          entry.value.employeeId.toLowerCase() == cleanInput ||
+          (entry.value.name.toLowerCase() == 'daniel paul' &&
+              (cleanInput == 'dp0345217@gmail.com' || cleanInput == 'danielpaul@enterprise-crm.com'))) {
+        return entry.value;
+      }
+    }
+    return null;
+  }
+
   bool get isAdmin {
     final role = userProfile.role.toUpperCase();
     final email = userProfile.email.toLowerCase();

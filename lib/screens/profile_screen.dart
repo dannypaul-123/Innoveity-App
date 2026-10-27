@@ -5,6 +5,8 @@ import '../models/app_models.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_avatar.dart';
 import '../services/api_service.dart';
+import '../services/biometric_auth_service.dart';
+import '../core/storage/token_storage.dart';
 
 class ProfileScreen extends StatefulWidget {
   final UserProfile userProfile;
@@ -54,6 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isSavingInfo = false;
   bool _isUpdatingPassword = false;
   String? _localAvatarPath;
+  bool _isFingerprintEnabled = false;
 
   @override
   void initState() {
@@ -67,6 +70,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _currentPasswordController = TextEditingController();
     _newPasswordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
+    _checkFingerprintStatus();
+  }
+
+  Future<void> _checkFingerprintStatus() async {
+    final enabled = await TokenStorage().isFingerprintEnabledFor(widget.userProfile.email);
+    if (mounted) {
+      setState(() {
+        _isFingerprintEnabled = enabled;
+      });
+    }
   }
 
   @override
@@ -1143,6 +1156,83 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       textAlign: TextAlign.center,
                     ),
                   ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Fingerprint Biometric Security Card
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryPine.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.fingerprint, size: 22, color: AppColors.primaryPine),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Fingerprint Quick Login',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: textDark),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _isFingerprintEnabled
+                            ? 'Enabled for 1-tap fast logins on this device'
+                            : 'Disabled on this device',
+                        style: TextStyle(fontSize: 11, color: textMuted),
+                      ),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: _isFingerprintEnabled,
+                  activeColor: AppColors.primaryPine,
+                  onChanged: (val) async {
+                    if (val) {
+                      final didScan = await BiometricAuthService.authenticateBiometricsOrPasscode(
+                        reason: 'Scan your fingerprint to link with your CRM employee account',
+                      );
+                      if (didScan) {
+                        await TokenStorage().setFingerprintEnabledFor(
+                          email: widget.userProfile.email,
+                          enabled: true,
+                        );
+                        if (mounted) {
+                          setState(() => _isFingerprintEnabled = true);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Fingerprint authentication enabled for quicker logins!'),
+                              backgroundColor: AppColors.primaryPine,
+                            ),
+                          );
+                        }
+                      }
+                    } else {
+                      await TokenStorage().setFingerprintEnabledFor(
+                        email: widget.userProfile.email,
+                        enabled: false,
+                      );
+                      if (mounted) {
+                        setState(() => _isFingerprintEnabled = false);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Fingerprint authentication disabled for this account.'),
+                          ),
+                        );
+                      }
+                    }
+                  },
                 ),
               ],
             ),

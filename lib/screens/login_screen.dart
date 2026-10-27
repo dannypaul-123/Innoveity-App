@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/biometric_auth_service.dart';
 import '../theme/app_colors.dart';
 import '../core/storage/token_storage.dart';
+import '../providers/app_state.dart';
 
 class LoginScreen extends StatefulWidget {
   final VoidCallback onLoginSuccess;
@@ -28,6 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _savePassword = true;
   String _enteredPin = "";
   List<SavedAccountCredential> _savedAccounts = [];
+  String? _enrolledFingerprintEmail;
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -48,9 +50,11 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final accounts = await TokenStorage().readSavedAccounts();
       final savedEmail = await TokenStorage().readSavedUserLogin();
+      final enrolledFingerprint = await TokenStorage().getFingerprintEnrolledEmail();
       if (mounted) {
         setState(() {
           _savedAccounts = accounts;
+          _enrolledFingerprintEmail = enrolledFingerprint;
           if (accounts.isNotEmpty) {
             // Find last used account or first saved account
             final matched = accounts.firstWhere(
@@ -134,25 +138,297 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleBiometricOrPasscodeAuth() async {
+    // 1. Get enrolled fingerprint email
+    final enrolledEmail = await TokenStorage().getFingerprintEnrolledEmail();
+
+    if (enrolledEmail == null || enrolledEmail.isEmpty) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            backgroundColor: widget.isDarkMode ? AppColors.cardDark : Colors.white,
+            title: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Fingerprint Not Configured',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: widget.isDarkMode ? AppColors.textLight : AppColors.textDark,
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              'Newer users must first log in and validate their credentials with the CRM backend before setting up fingerprint for quicker logins.',
+              style: TextStyle(
+                fontSize: 13,
+                color: widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted,
+                height: 1.4,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    }
+
+    // 2. Validate that the employee account is registered in the CRM backend!
+    final isAddedToCrm = AppState.isEmployeeInCrmBackend(enrolledEmail);
+    if (!isAddedToCrm) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            backgroundColor: widget.isDarkMode ? AppColors.cardDark : Colors.white,
+            title: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.gpp_bad, color: Colors.red),
+                SizedBox(width: 10),
+                Text(
+                  'Access Denied',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red),
+                ),
+              ],
+            ),
+            content: Text(
+              'Only employees whose accounts are added to the CRM backend can access fingerprint authentication.\n\nAccount "$enrolledEmail" is not recognized in the CRM backend. Please contact your system administrator.',
+              style: TextStyle(
+                fontSize: 13,
+                color: widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted,
+                height: 1.4,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    }
+
+    // 3. Authenticate with fingerprint/biometrics
     final success = await BiometricAuthService.authenticateBiometricsOrPasscode(
-      reason: 'Scan Fingerprint, Face ID, or Device PIN to log in to Innoveity CRM',
+      reason: 'Scan Fingerprint to log in to Innoveity CRM as $enrolledEmail',
     );
+
     if (success && mounted) {
-      if (_emailController.text.trim().isEmpty) {
-        if (_savedAccounts.isNotEmpty) {
-          _emailController.text = _savedAccounts.first.email;
-          _passwordController.text = _savedAccounts.first.password;
-        } else {
-          final savedEmail = await TokenStorage().readSavedUserLogin();
-          _emailController.text = (savedEmail != null && savedEmail.isNotEmpty)
-              ? savedEmail
-              : 'antorajan501@gmail.com';
+      final accounts = await TokenStorage().readSavedAccounts();
+      final matchedAccount = accounts.firstWhere(
+        (a) => a.email.trim().toLowerCase() == enrolledEmail.trim().toLowerCase(),
+        orElse: () => SavedAccountCredential(
+          email: enrolledEmail,
+          password: 'password',
+          savedAt: DateTime.now(),
+        ),
+      );
+
+      _emailController.text = matchedAccount.email;
+      _passwordController.text = matchedAccount.password;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Fingerprint verified for ${matchedAccount.email}'),
+          backgroundColor: AppColors.primaryPine,
+          duration: const Duration(seconds: 1),
+        ),
+      );
+
+      if (widget.onLoginWithCredentials != null) {
+        final loginOk = await widget.onLoginWithCredentials!(
+          matchedAccount.email,
+          matchedAccount.password,
+        );
+        if (loginOk) {
+          widget.onLoginSuccess();
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('CRM credential verification failed. Please log in with password.'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
+      } else {
+        widget.onLoginSuccess();
       }
-      if (_passwordController.text.trim().isEmpty) {
-        _passwordController.text = '123456';
+    }
+  }
+
+  Future<void> _promptFingerprintSetup(String email, String password) async {
+    if (!mounted) {
+      widget.onLoginSuccess();
+      return;
+    }
+
+    final bool? setupFingerprint = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: widget.isDarkMode ? AppColors.cardDark : Colors.white,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: widget.isDarkMode ? AppColors.headerDarkPine : const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                Icons.fingerprint,
+                color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Setup Fingerprint Login',
+              style: TextStyle(
+                fontSize: 16.5,
+                fontWeight: FontWeight.bold,
+                color: widget.isDarkMode ? AppColors.textLight : AppColors.textDark,
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+            Text(
+              'Credentials Validated Successfully',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Would you like to enable fingerprint authentication for quicker, secure 1-tap logins to the CRM portal on this device?',
+              style: TextStyle(
+                fontSize: 12.5,
+                color: widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: widget.isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.badge_outlined,
+                    size: 16,
+                    color: widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      email,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: widget.isDarkMode ? AppColors.textLight : AppColors.textDark,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              'Not Now',
+              style: TextStyle(
+                color: widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            icon: const Icon(Icons.fingerprint, size: 18),
+            label: const Text('Setup Fingerprint'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryPine,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (setupFingerprint == true) {
+      final didScan = await BiometricAuthService.authenticateBiometricsOrPasscode(
+        reason: 'Scan Fingerprint to enable quicker logins for $email',
+      );
+      if (didScan) {
+        await TokenStorage().setFingerprintEnabledFor(
+          email: email,
+          enabled: true,
+          password: password.isNotEmpty ? password : 'password',
+        );
+        final enrolled = await TokenStorage().getFingerprintEnrolledEmail();
+        final refreshedAccounts = await TokenStorage().readSavedAccounts();
+        if (mounted) {
+          setState(() {
+            _enrolledFingerprintEmail = enrolled;
+            _savedAccounts = refreshedAccounts;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Fingerprint authentication enabled for quicker logins!'),
+              backgroundColor: AppColors.primaryPine,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Fingerprint setup was not completed.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
       }
-      await _handleSignIn();
+    }
+
+    if (mounted) {
+      widget.onLoginSuccess();
     }
   }
 
@@ -221,10 +497,22 @@ class _LoginScreenState extends State<LoginScreen> {
           await TokenStorage().saveUserLogin(inputEmail);
         }
         final refreshed = await TokenStorage().readSavedAccounts();
+        final enrolled = await TokenStorage().getFingerprintEnrolledEmail();
         if (mounted) {
           setState(() {
             _savedAccounts = refreshed;
+            _enrolledFingerprintEmail = enrolled;
           });
+        }
+
+        // Check if this validated account has fingerprint configured
+        final isFingerprintSetup = await TokenStorage().isFingerprintEnabledFor(inputEmail);
+        if (!isFingerprintSetup) {
+          await _promptFingerprintSetup(inputEmail, inputPassword);
+          return;
+        } else {
+          widget.onLoginSuccess();
+          return;
         }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -245,10 +533,17 @@ class _LoginScreenState extends State<LoginScreen> {
         await TokenStorage().saveUserLogin(inputEmail);
       }
       final refreshed = await TokenStorage().readSavedAccounts();
+      final enrolled = await TokenStorage().getFingerprintEnrolledEmail();
       if (mounted) {
         setState(() {
           _savedAccounts = refreshed;
+          _enrolledFingerprintEmail = enrolled;
         });
+      }
+      final isFingerprintSetup = await TokenStorage().isFingerprintEnabledFor(inputEmail);
+      if (!isFingerprintSetup) {
+        await _promptFingerprintSetup(inputEmail, inputPassword);
+        return;
       }
       widget.onLoginSuccess();
     }
@@ -551,23 +846,28 @@ class _LoginScreenState extends State<LoginScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.key_rounded,
-                    size: 14,
-                    color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    'Saved Accounts (${_savedAccounts.length})',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.key_rounded,
+                      size: 14,
                       color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        'Saved Accounts (${_savedAccounts.length})',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               Text(
                 'Tap to autofill',
@@ -1018,7 +1318,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Use Phone Passcode / Face ID',
+                      'Fingerprint Quick Login',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -1026,17 +1326,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     Text(
-                      'Fast 1-tap secure authentication',
+                      _enrolledFingerprintEmail != null
+                          ? 'Tap to unlock as $_enrolledFingerprintEmail'
+                          : 'Login with credentials first to set up',
                       style: TextStyle(
                         fontSize: 11,
                         color: widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
               Icon(
-                Icons.chevron_right,
+                _enrolledFingerprintEmail != null ? Icons.fingerprint : Icons.lock_outline,
                 color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
                 size: 20,
               ),

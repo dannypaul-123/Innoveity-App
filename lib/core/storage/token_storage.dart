@@ -10,12 +10,14 @@ class SavedAccountCredential {
   final String password;
   final String? label;
   final DateTime savedAt;
+  final bool isFingerprintEnabled;
 
   SavedAccountCredential({
     required this.email,
     required this.password,
     this.label,
     required this.savedAt,
+    this.isFingerprintEnabled = false,
   });
 
   factory SavedAccountCredential.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class SavedAccountCredential {
       savedAt: json['savedAt'] != null
           ? DateTime.tryParse(json['savedAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
+      isFingerprintEnabled: json['isFingerprintEnabled'] == true,
     );
   }
 
@@ -35,6 +38,7 @@ class SavedAccountCredential {
       'password': password,
       if (label != null) 'label': label,
       'savedAt': savedAt.toIso8601String(),
+      'isFingerprintEnabled': isFingerprintEnabled,
     };
   }
 }
@@ -45,8 +49,13 @@ class TokenStorage {
   static const _savedAccountsKey = 'saved_user_accounts_passwords';
   static const _savedUserLoginKey = 'saved_user_login';
   static const _hasInitializedKey = 'has_initialized_saved_accounts_vault';
+  static const _fingerprintEnrolledEmailKey = 'fingerprint_enrolled_user_email';
+  static const _fingerprintEnabledPrefix = 'fingerprint_enabled_user_';
 
   static final Map<String, String> _memoryCache = {};
+
+  @visibleForTesting
+  static void resetMemoryCacheForTesting() => _memoryCache.clear();
 
   static const _androidOptions = AndroidOptions(
     encryptedSharedPreferences: true,
@@ -86,8 +95,11 @@ class TokenStorage {
     ),
   ];
 
+  bool get _isTestEnv => !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
+
   Future<File?> _getAccountsFile() async {
     try {
+      if (_isTestEnv) return null;
       final dir = await getApplicationDocumentsDirectory();
       return File('${dir.path}/innoveity_saved_credentials.json');
     } catch (_) {
@@ -106,13 +118,15 @@ class TokenStorage {
   // --- TOKEN METHODS ---
   Future<String?> readAccessToken() async {
     if (_memoryCache.containsKey(_accessKey)) return _memoryCache[_accessKey];
-    try {
-      final token = await _storage.read(key: _accessKey);
-      if (token != null) {
-        _memoryCache[_accessKey] = token;
-        return token;
-      }
-    } catch (_) {}
+    if (!_isTestEnv) {
+      try {
+        final token = await _storage.read(key: _accessKey);
+        if (token != null) {
+          _memoryCache[_accessKey] = token;
+          return token;
+        }
+      } catch (_) {}
+    }
     try {
       final prefs = await _getPrefs();
       final token = prefs?.getString(_accessKey);
@@ -126,13 +140,15 @@ class TokenStorage {
 
   Future<String?> readRefreshToken() async {
     if (_memoryCache.containsKey(_refreshKey)) return _memoryCache[_refreshKey];
-    try {
-      final token = await _storage.read(key: _refreshKey);
-      if (token != null) {
-        _memoryCache[_refreshKey] = token;
-        return token;
-      }
-    } catch (_) {}
+    if (!_isTestEnv) {
+      try {
+        final token = await _storage.read(key: _refreshKey);
+        if (token != null) {
+          _memoryCache[_refreshKey] = token;
+          return token;
+        }
+      } catch (_) {}
+    }
     try {
       final prefs = await _getPrefs();
       final token = prefs?.getString(_refreshKey);
@@ -146,9 +162,11 @@ class TokenStorage {
 
   Future<void> save({required String accessToken, String? refreshToken}) async {
     _memoryCache[_accessKey] = accessToken;
-    try {
-      await _storage.write(key: _accessKey, value: accessToken);
-    } catch (_) {}
+    if (!_isTestEnv) {
+      try {
+        await _storage.write(key: _accessKey, value: accessToken);
+      } catch (_) {}
+    }
     try {
       final prefs = await _getPrefs();
       await prefs?.setString(_accessKey, accessToken);
@@ -156,9 +174,11 @@ class TokenStorage {
 
     if (refreshToken != null) {
       _memoryCache[_refreshKey] = refreshToken;
-      try {
-        await _storage.write(key: _refreshKey, value: refreshToken);
-      } catch (_) {}
+      if (!_isTestEnv) {
+        try {
+          await _storage.write(key: _refreshKey, value: refreshToken);
+        } catch (_) {}
+      }
       try {
         final prefs = await _getPrefs();
         await prefs?.setString(_refreshKey, refreshToken);
@@ -172,13 +192,15 @@ class TokenStorage {
       final mem = _memoryCache[_savedUserLoginKey];
       if (mem != null && mem.isNotEmpty) return mem;
     }
-    try {
-      final email = await _storage.read(key: _savedUserLoginKey);
-      if (email != null && email.isNotEmpty) {
-        _memoryCache[_savedUserLoginKey] = email;
-        return email;
-      }
-    } catch (_) {}
+    if (!_isTestEnv) {
+      try {
+        final email = await _storage.read(key: _savedUserLoginKey);
+        if (email != null && email.isNotEmpty) {
+          _memoryCache[_savedUserLoginKey] = email;
+          return email;
+        }
+      } catch (_) {}
+    }
     try {
       final prefs = await _getPrefs();
       final email = prefs?.getString(_savedUserLoginKey);
@@ -193,9 +215,11 @@ class TokenStorage {
   Future<void> saveUserLogin(String email) async {
     final clean = email.trim();
     _memoryCache[_savedUserLoginKey] = clean;
-    try {
-      await _storage.write(key: _savedUserLoginKey, value: clean);
-    } catch (_) {}
+    if (!_isTestEnv) {
+      try {
+        await _storage.write(key: _savedUserLoginKey, value: clean);
+      } catch (_) {}
+    }
     try {
       final prefs = await _getPrefs();
       await prefs?.setString(_savedUserLoginKey, clean);
@@ -226,10 +250,12 @@ class TokenStorage {
     }
 
     // 3. Hardware / Keystore Encrypted Secure Storage
-    try {
-      await _storage.write(key: _savedAccountsKey, value: jsonString);
-    } catch (e) {
-      debugPrint('SecureStorage persist error: $e');
+    if (!_isTestEnv) {
+      try {
+        await _storage.write(key: _savedAccountsKey, value: jsonString);
+      } catch (e) {
+        debugPrint('SecureStorage persist error: $e');
+      }
     }
   }
 
@@ -241,14 +267,16 @@ class TokenStorage {
     }
 
     // 2. FlutterSecureStorage
-    try {
-      final raw = await _storage.read(key: _savedAccountsKey);
-      if (raw != null && raw.isNotEmpty && raw != '[]') {
-        _memoryCache[_savedAccountsKey] = raw;
-        return raw;
+    if (!_isTestEnv) {
+      try {
+        final raw = await _storage.read(key: _savedAccountsKey);
+        if (raw != null && raw.isNotEmpty && raw != '[]') {
+          _memoryCache[_savedAccountsKey] = raw;
+          return raw;
+        }
+      } catch (e) {
+        debugPrint('SecureStorage read warning: $e');
       }
-    } catch (e) {
-      debugPrint('SecureStorage read warning: $e');
     }
 
     // 3. SharedPreferences
@@ -257,8 +285,10 @@ class TokenStorage {
       final raw = prefs?.getString(_savedAccountsKey);
       if (raw != null && raw.isNotEmpty && raw != '[]') {
         _memoryCache[_savedAccountsKey] = raw;
-        // heal SecureStorage in background
-        _storage.write(key: _savedAccountsKey, value: raw).catchError((_) {});
+        if (!_isTestEnv) {
+          // heal SecureStorage in background
+          _storage.write(key: _savedAccountsKey, value: raw).catchError((_) {});
+        }
         return raw;
       }
     } catch (e) {
@@ -315,10 +345,86 @@ class TokenStorage {
     }
   }
 
+  // --- FINGERPRINT / BIOMETRIC ENROLLMENT METHODS ---
+  Future<String?> getFingerprintEnrolledEmail() async {
+    try {
+      final prefs = await _getPrefs();
+      final email = prefs?.getString(_fingerprintEnrolledEmailKey);
+      if (email != null && email.isNotEmpty) return email;
+      final accounts = await readSavedAccounts();
+      final enrolled = accounts.where((a) => a.isFingerprintEnabled).toList();
+      if (enrolled.isNotEmpty) return enrolled.first.email;
+    } catch (_) {}
+    return null;
+  }
+
+  Future<bool> isFingerprintEnabledFor(String email) async {
+    final clean = email.trim().toLowerCase();
+    if (clean.isEmpty) return false;
+    try {
+      final prefs = await _getPrefs();
+      final prefVal = prefs?.getBool('$_fingerprintEnabledPrefix$clean');
+      if (prefVal != null) return prefVal;
+      final accounts = await readSavedAccounts();
+      return accounts.any((a) => a.email.trim().toLowerCase() == clean && a.isFingerprintEnabled);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> setFingerprintEnabledFor({
+    required String email,
+    required bool enabled,
+    String? password,
+  }) async {
+    final clean = email.trim().toLowerCase();
+    if (clean.isEmpty) return;
+    try {
+      final prefs = await _getPrefs();
+      await prefs?.setBool('$_fingerprintEnabledPrefix$clean', enabled);
+      if (enabled) {
+        await prefs?.setString(_fingerprintEnrolledEmailKey, clean);
+      } else {
+        final currentEnrolled = prefs?.getString(_fingerprintEnrolledEmailKey);
+        if (currentEnrolled != null && currentEnrolled.toLowerCase() == clean) {
+          await prefs?.remove(_fingerprintEnrolledEmailKey);
+        }
+      }
+
+      final accounts = await readSavedAccounts();
+      final index = accounts.indexWhere((a) => a.email.trim().toLowerCase() == clean);
+      if (index != -1) {
+        final old = accounts[index];
+        accounts[index] = SavedAccountCredential(
+          email: old.email,
+          password: (password != null && password.isNotEmpty) ? password : old.password,
+          label: old.label,
+          savedAt: DateTime.now(),
+          isFingerprintEnabled: enabled,
+        );
+      } else if (password != null && password.isNotEmpty) {
+        accounts.insert(
+          0,
+          SavedAccountCredential(
+            email: clean,
+            password: password,
+            savedAt: DateTime.now(),
+            isFingerprintEnabled: enabled,
+          ),
+        );
+      }
+      final encoded = jsonEncode(accounts.map((a) => a.toJson()).toList());
+      await _persistAccountsRaw(encoded);
+    } catch (e) {
+      debugPrint('setFingerprintEnabledFor error: $e');
+    }
+  }
+
   Future<void> saveAccountCredential({
     required String email,
     required String password,
     String? label,
+    bool? isFingerprintEnabled,
   }) async {
     try {
       final cleanEmail = email.trim();
@@ -326,6 +432,12 @@ class TokenStorage {
       if (cleanEmail.isEmpty || cleanPassword.isEmpty) return;
 
       final list = await readSavedAccounts();
+      final existing = list.where(
+        (c) => c.email.trim().toLowerCase() == cleanEmail.toLowerCase(),
+      ).toList();
+      final existingFingerprint = existing.isNotEmpty ? existing.first.isFingerprintEnabled : false;
+      final fingerprintFlag = isFingerprintEnabled ?? existingFingerprint;
+
       list.removeWhere(
         (c) => c.email.trim().toLowerCase() == cleanEmail.toLowerCase(),
       );
@@ -336,6 +448,7 @@ class TokenStorage {
           password: cleanPassword,
           label: label,
           savedAt: DateTime.now(),
+          isFingerprintEnabled: fingerprintFlag,
         ),
       );
 
@@ -356,6 +469,14 @@ class TokenStorage {
       final encoded = jsonEncode(list.map((c) => c.toJson()).toList());
       await _persistAccountsRaw(encoded);
 
+      // Clean up fingerprint if this account had it enrolled
+      final currentFingerprintEmail = await getFingerprintEnrolledEmail();
+      if (currentFingerprintEmail != null && currentFingerprintEmail.toLowerCase() == cleanEmail) {
+        final prefs = await _getPrefs();
+        await prefs?.remove(_fingerprintEnrolledEmailKey);
+        await prefs?.remove('$_fingerprintEnabledPrefix$cleanEmail');
+      }
+
       // If last saved email was deleted, update to next available or clear
       final currentLast = await readSavedUserLogin();
       if (currentLast != null && currentLast.toLowerCase() == cleanEmail) {
@@ -363,9 +484,11 @@ class TokenStorage {
           await saveUserLogin(list.first.email);
         } else {
           _memoryCache.remove(_savedUserLoginKey);
-          try {
-            await _storage.delete(key: _savedUserLoginKey);
-          } catch (_) {}
+          if (!_isTestEnv) {
+            try {
+              await _storage.delete(key: _savedUserLoginKey);
+            } catch (_) {}
+          }
           try {
             final prefs = await _getPrefs();
             await prefs?.remove(_savedUserLoginKey);
@@ -392,10 +515,12 @@ class TokenStorage {
         await file.writeAsString('[]', flush: true);
       }
     } catch (_) {}
-    try {
-      await _storage.write(key: _savedAccountsKey, value: '[]');
-      await _storage.delete(key: _savedUserLoginKey);
-    } catch (_) {}
+    if (!_isTestEnv) {
+      try {
+        await _storage.write(key: _savedAccountsKey, value: '[]');
+        await _storage.delete(key: _savedUserLoginKey);
+      } catch (_) {}
+    }
   }
 
   /// Clears only session tokens (access_token and refresh_token) on sign out.
@@ -403,12 +528,14 @@ class TokenStorage {
   Future<void> clear() async {
     _memoryCache.remove(_accessKey);
     _memoryCache.remove(_refreshKey);
-    try {
-      await _storage.delete(key: _accessKey);
-    } catch (_) {}
-    try {
-      await _storage.delete(key: _refreshKey);
-    } catch (_) {}
+    if (!_isTestEnv) {
+      try {
+        await _storage.delete(key: _accessKey);
+      } catch (_) {}
+      try {
+        await _storage.delete(key: _refreshKey);
+      } catch (_) {}
+    }
     try {
       final prefs = await _getPrefs();
       await prefs?.remove(_accessKey);
