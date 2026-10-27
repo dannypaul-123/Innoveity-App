@@ -1030,7 +1030,10 @@ class _LiveAttendanceOsmMapState extends State<LiveAttendanceOsmMap> with Single
                           ),
                           Text(
                             '${user.employeeId} • ${user.role} [${user.isIntern ? "INTERN" : "STAFF"}]',
-                            style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1060,7 +1063,11 @@ class _LiveAttendanceOsmMapState extends State<LiveAttendanceOsmMap> with Single
                   children: [
                     Text(
                       'GPS Position: ${user.lat.toStringAsFixed(6)}, ${user.lng.toStringAsFixed(6)}',
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : AppColors.textDark,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(

@@ -386,6 +386,21 @@ class AppQuickSearchDelegate extends SearchDelegate<String> {
     return theme.copyWith(
       appBarTheme: theme.appBarTheme.copyWith(
         backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+        iconTheme: IconThemeData(
+          color: isDark ? Colors.white : AppColors.textDark,
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        hintStyle: TextStyle(
+          color: isDark ? AppColors.textLightMuted : AppColors.textMuted,
+          fontSize: 14,
+        ),
+      ),
+      textTheme: theme.textTheme.copyWith(
+        titleLarge: TextStyle(
+          color: isDark ? Colors.white : AppColors.textDark,
+          fontSize: 16,
+        ),
       ),
     );
   }

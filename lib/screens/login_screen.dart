@@ -367,8 +367,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   Icons.email_outlined,
                                   size: 18,
                                   color: _authModeIndex == 0
-                                      ? AppColors.primaryPine
-                                      : AppColors.textMuted,
+                                      ? (widget.isDarkMode ? Colors.white : AppColors.primaryPine)
+                                      : (widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted),
                                 ),
                                 const SizedBox(width: 6),
                                 Flexible(
@@ -381,8 +381,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                           ? FontWeight.w600
                                           : FontWeight.normal,
                                       color: _authModeIndex == 0
-                                          ? AppColors.primaryPine
-                                          : AppColors.textMuted,
+                                          ? (widget.isDarkMode ? Colors.white : AppColors.primaryPine)
+                                          : (widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted),
                                     ),
                                   ),
                                 ),
@@ -419,8 +419,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   Icons.dialpad,
                                   size: 18,
                                   color: _authModeIndex == 1
-                                      ? AppColors.primaryPine
-                                      : AppColors.textMuted,
+                                      ? (widget.isDarkMode ? Colors.white : AppColors.primaryPine)
+                                      : (widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted),
                                 ),
                                 const SizedBox(width: 6),
                                 Flexible(
@@ -433,8 +433,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                           ? FontWeight.w600
                                           : FontWeight.normal,
                                       color: _authModeIndex == 1
-                                          ? AppColors.primaryPine
-                                          : AppColors.textMuted,
+                                          ? (widget.isDarkMode ? Colors.white : AppColors.primaryPine)
+                                          : (widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted),
                                     ),
                                   ),
                                 ),
@@ -466,18 +466,18 @@ class _LoginScreenState extends State<LoginScreen> {
                       fit: BoxFit.scaleDown,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Icon(
                             Icons.verified_user,
                             size: 14,
-                            color: AppColors.primaryPine,
+                            color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
                           ),
-                          SizedBox(width: 6),
+                          const SizedBox(width: 6),
                           Text(
                             '256-bit SSL • Single Sign-On • IT Helpdesk Support',
                             style: TextStyle(
                               fontSize: 11,
-                              color: AppColors.textMuted,
+                              color: widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted,
                             ),
                           ),
                         ],
@@ -488,7 +488,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: 120,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: AppColors.borderLight,
+                        color: widget.isDarkMode ? AppColors.borderCardDark : AppColors.borderLight,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -513,11 +513,11 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         const SizedBox(height: 4),
-        const Text(
+        Text(
           'Sign in with your enterprise credentials to manage shifts, timesheets, and deliverables.',
           style: TextStyle(
             fontSize: 13,
-            color: AppColors.textMuted,
+            color: widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted,
           ),
         ),
         const SizedBox(height: 20),
@@ -529,14 +529,18 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.key_rounded, size: 14, color: AppColors.primaryPine),
+                  Icon(
+                    Icons.key_rounded,
+                    size: 14,
+                    color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
+                  ),
                   const SizedBox(width: 5),
                   Text(
                     'Saved Accounts (${_savedAccounts.length})',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.primaryPine,
+                      color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
                     ),
                   ),
                 ],
@@ -567,13 +571,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
                           color: isCurrent
-                              ? AppColors.primaryPine.withValues(alpha: widget.isDarkMode ? 0.25 : 0.1)
+                              ? AppColors.primaryPine.withValues(alpha: widget.isDarkMode ? 0.35 : 0.1)
                               : (widget.isDarkMode ? AppColors.cardDark : Colors.white),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: isCurrent
-                                ? AppColors.primaryPine
-                                : (widget.isDarkMode ? Colors.white12 : const Color(0xFFCBD5E1)),
+                                ? (widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine)
+                                : (widget.isDarkMode ? AppColors.borderCardDark : const Color(0xFFCBD5E1)),
                             width: isCurrent ? 1.4 : 1,
                           ),
                         ),
@@ -583,7 +587,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             Icon(
                               Icons.account_circle,
                               size: 15,
-                              color: isCurrent ? AppColors.primaryPine : AppColors.textMuted,
+                              color: isCurrent
+                                  ? (widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine)
+                                  : (widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted),
                             ),
                             const SizedBox(width: 6),
                             Column(
@@ -596,7 +602,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     fontSize: 11.5,
                                     fontWeight: isCurrent ? FontWeight.bold : FontWeight.w600,
                                     color: isCurrent
-                                        ? AppColors.primaryPine
+                                        ? (widget.isDarkMode ? AppColors.emeraldMintText : AppColors.primaryPine)
                                         : (widget.isDarkMode ? Colors.white : AppColors.textDark),
                                   ),
                                 ),
@@ -632,21 +638,33 @@ class _LoginScreenState extends State<LoginScreen> {
         ],
 
         // Company Email
-        const Text(
+        Text(
           'Company Email Address',
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: widget.isDarkMode ? AppColors.textLight : AppColors.textDark,
+          ),
         ),
         const SizedBox(height: 6),
         TextField(
           controller: _emailController,
+          style: TextStyle(
+            fontSize: 14,
+            color: widget.isDarkMode ? AppColors.textLight : AppColors.textDark,
+          ),
           decoration: InputDecoration(
-            prefixIcon: const Icon(Icons.mail_outline, size: 20),
+            prefixIcon: Icon(
+              Icons.mail_outline,
+              size: 20,
+              color: widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted,
+            ),
             suffixIcon: _savedAccounts.isNotEmpty
                 ? PopupMenuButton<SavedAccountCredential>(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.arrow_drop_down_circle_outlined,
                       size: 20,
-                      color: AppColors.primaryPine,
+                      color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
                     ),
                     tooltip: 'Select Saved Account',
                     onSelected: _selectSavedAccount,
@@ -655,7 +673,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         value: acc,
                         child: Row(
                           children: [
-                            const Icon(Icons.lock_person_outlined, size: 16, color: AppColors.primaryPine),
+                            Icon(
+                              Icons.lock_person_outlined,
+                              size: 16,
+                              color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Column(
@@ -663,10 +685,20 @@ class _LoginScreenState extends State<LoginScreen> {
                                 children: [
                                   Text(
                                     acc.email,
-                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: widget.isDarkMode ? AppColors.textLight : AppColors.textDark,
+                                    ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  const Text('••••••••', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                                  Text(
+                                    '••••••••',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: widget.isDarkMode ? AppColors.textLightMuted : Colors.grey,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -677,6 +709,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   )
                 : null,
             hintText: 'name@company.com',
+            hintStyle: TextStyle(
+              fontSize: 14,
+              color: widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted,
+            ),
             filled: true,
             fillColor: widget.isDarkMode
                 ? AppColors.cardDark
@@ -685,15 +721,22 @@ class _LoginScreenState extends State<LoginScreen> {
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.borderLight),
+              borderSide: BorderSide(
+                color: widget.isDarkMode ? AppColors.borderCardDark : AppColors.borderLight,
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.borderLight),
+              borderSide: BorderSide(
+                color: widget.isDarkMode ? AppColors.borderCardDark : AppColors.borderLight,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primaryPine, width: 1.5),
+              borderSide: BorderSide(
+                color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
+                width: 1.5,
+              ),
             ),
           ),
         ),
@@ -704,9 +747,13 @@ class _LoginScreenState extends State<LoginScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'Password',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: widget.isDarkMode ? AppColors.textLight : AppColors.textDark,
+              ),
             ),
             GestureDetector(
               onTap: () {
@@ -716,12 +763,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 );
               },
-              child: const Text(
+              child: Text(
                 'Forgot Password?',
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.primaryPine,
+                  color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
                 ),
               ),
             ),
@@ -731,18 +778,31 @@ class _LoginScreenState extends State<LoginScreen> {
         TextField(
           controller: _passwordController,
           obscureText: _obscurePassword,
+          style: TextStyle(
+            fontSize: 14,
+            color: widget.isDarkMode ? AppColors.textLight : AppColors.textDark,
+          ),
           decoration: InputDecoration(
-            prefixIcon: const Icon(Icons.lock_outline, size: 20),
+            prefixIcon: Icon(
+              Icons.lock_outline,
+              size: 20,
+              color: widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted,
+            ),
             suffixIcon: IconButton(
               icon: Icon(
                 _obscurePassword ? Icons.visibility : Icons.visibility_off,
                 size: 20,
+                color: widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted,
               ),
               onPressed: () {
                 setState(() => _obscurePassword = !_obscurePassword);
               },
             ),
             hintText: 'Enter password',
+            hintStyle: TextStyle(
+              fontSize: 14,
+              color: widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted,
+            ),
             filled: true,
             fillColor: widget.isDarkMode
                 ? AppColors.cardDark
@@ -751,15 +811,22 @@ class _LoginScreenState extends State<LoginScreen> {
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.borderLight),
+              borderSide: BorderSide(
+                color: widget.isDarkMode ? AppColors.borderCardDark : AppColors.borderLight,
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.borderLight),
+              borderSide: BorderSide(
+                color: widget.isDarkMode ? AppColors.borderCardDark : AppColors.borderLight,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.primaryPine, width: 1.5),
+              borderSide: BorderSide(
+                color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
+                width: 1.5,
+              ),
             ),
           ),
         ),
@@ -774,22 +841,34 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 Checkbox(
                   value: _savePassword,
-                  activeColor: AppColors.primaryPine,
+                  activeColor: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
                   onChanged: (val) => setState(() => _savePassword = val ?? true),
                 ),
-                const Text(
+                Text(
                   'Save password',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: widget.isDarkMode ? AppColors.textLight : AppColors.textDark,
+                  ),
                 ),
               ],
             ),
             if (_emailController.text.trim().isNotEmpty && _passwordController.text.trim().isNotEmpty)
               TextButton.icon(
                 onPressed: _saveCurrentCredentialsManually,
-                icon: const Icon(Icons.bookmark_add_outlined, size: 14, color: AppColors.primaryPine),
-                label: const Text(
+                icon: Icon(
+                  Icons.bookmark_add_outlined,
+                  size: 14,
+                  color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
+                ),
+                label: Text(
                   'Save Account',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryPine),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
+                  ),
                 ),
                 style: TextButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -804,13 +883,16 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             Checkbox(
               value: _rememberDevice,
-              activeColor: AppColors.primaryPine,
+              activeColor: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
               onChanged: (val) => setState(() => _rememberDevice = val ?? true),
             ),
-            const Expanded(
+            Expanded(
               child: Text(
                 'Remember this device for 30 days',
-                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted,
+                ),
               ),
             ),
           ],
@@ -850,21 +932,29 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // Divider
         Row(
-          children: const [
-            Expanded(child: Divider(color: AppColors.borderLight)),
+          children: [
+            Expanded(
+              child: Divider(
+                color: widget.isDarkMode ? AppColors.borderCardDark : AppColors.borderLight,
+              ),
+            ),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
                 'OR QUICK UNLOCK',
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.8,
-                  color: AppColors.textMuted,
+                  color: widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted,
                 ),
               ),
             ),
-            Expanded(child: Divider(color: AppColors.borderLight)),
+            Expanded(
+              child: Divider(
+                color: widget.isDarkMode ? AppColors.borderCardDark : AppColors.borderLight,
+              ),
+            ),
           ],
         ),
 
@@ -875,8 +965,10 @@ class _LoginScreenState extends State<LoginScreen> {
           onPressed: _handleBiometricOrPasscodeAuth,
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-            side: const BorderSide(color: AppColors.borderEmerald),
-            backgroundColor: AppColors.surfaceContainerLow,
+            side: BorderSide(
+              color: widget.isDarkMode ? AppColors.borderCardDark : AppColors.borderEmerald,
+            ),
+            backgroundColor: widget.isDarkMode ? AppColors.cardDark : AppColors.surfaceContainerLow,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
@@ -887,12 +979,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: widget.isDarkMode ? AppColors.headerDarkPine : Colors.white,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.fingerprint,
-                  color: AppColors.primaryPine,
+                  color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
                   size: 20,
                 ),
               ),
@@ -900,25 +992,28 @@ class _LoginScreenState extends State<LoginScreen> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
                       'Use Phone Passcode / Face ID',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textDark,
+                        color: widget.isDarkMode ? AppColors.textLight : AppColors.textDark,
                       ),
                     ),
                     Text(
                       'Fast 1-tap secure authentication',
-                      style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right,
-                color: AppColors.primaryPine,
+                color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
                 size: 20,
               ),
             ],
@@ -933,10 +1028,23 @@ class _LoginScreenState extends State<LoginScreen> {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: _handleSignIn,
-                icon: const Icon(Icons.domain, size: 18, color: AppColors.primaryPine),
-                label: const Text('Okta SSO', style: TextStyle(color: AppColors.textDark, fontSize: 13)),
+                icon: Icon(
+                  Icons.domain,
+                  size: 18,
+                  color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
+                ),
+                label: Text(
+                  'Okta SSO',
+                  style: TextStyle(
+                    color: widget.isDarkMode ? AppColors.textLight : AppColors.textDark,
+                    fontSize: 13,
+                  ),
+                ),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.borderLight),
+                  backgroundColor: widget.isDarkMode ? AppColors.cardDark : Colors.transparent,
+                  side: BorderSide(
+                    color: widget.isDarkMode ? AppColors.borderCardDark : AppColors.borderLight,
+                  ),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
@@ -945,10 +1053,23 @@ class _LoginScreenState extends State<LoginScreen> {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: _handleSignIn,
-                icon: const Icon(Icons.hub, size: 18, color: AppColors.primaryPine),
-                label: const Text('Entra ID', style: TextStyle(color: AppColors.textDark, fontSize: 13)),
+                icon: Icon(
+                  Icons.hub,
+                  size: 18,
+                  color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
+                ),
+                label: Text(
+                  'Entra ID',
+                  style: TextStyle(
+                    color: widget.isDarkMode ? AppColors.textLight : AppColors.textDark,
+                    fontSize: 13,
+                  ),
+                ),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.borderLight),
+                  backgroundColor: widget.isDarkMode ? AppColors.cardDark : Colors.transparent,
+                  side: BorderSide(
+                    color: widget.isDarkMode ? AppColors.borderCardDark : AppColors.borderLight,
+                  ),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
@@ -1003,31 +1124,44 @@ class _LoginScreenState extends State<LoginScreen> {
           'Employee Passcode',
           style: theme.textTheme.headlineMedium?.copyWith(
             fontWeight: FontWeight.bold,
+            color: widget.isDarkMode ? AppColors.textLight : AppColors.textDark,
           ),
         ),
-        const Text(
+        Text(
           'Enter PIN to unlock workspace',
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textMuted),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted,
+          ),
         ),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: AppColors.surfaceContainerLow,
+            color: widget.isDarkMode ? AppColors.cardDark : AppColors.surfaceContainerLow,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.borderEmerald),
+            border: Border.all(
+              color: widget.isDarkMode
+                  ? AppColors.vibrantEmerald.withValues(alpha: 0.4)
+                  : AppColors.borderEmerald,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.lock_open, size: 12, color: AppColors.primaryPine),
-              SizedBox(width: 4),
+            children: [
+              Icon(
+                Icons.lock_open,
+                size: 12,
+                color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
+              ),
+              const SizedBox(width: 4),
               Text(
                 'DEVICE FAST UNLOCK',
                 style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.primaryPine,
+                  color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
                 ),
               ),
             ],
@@ -1036,9 +1170,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
         const SizedBox(height: 20),
 
-        const Text(
+        Text(
           'Enter 6-digit phone passcode',
-          style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+          style: TextStyle(
+            fontSize: 13,
+            color: widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted,
+          ),
         ),
         const SizedBox(height: 10),
 
@@ -1053,9 +1190,13 @@ class _LoginScreenState extends State<LoginScreen> {
               height: 14,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isFilled ? AppColors.primaryPine : Colors.transparent,
+                color: isFilled
+                    ? (widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine)
+                    : Colors.transparent,
                 border: Border.all(
-                  color: isFilled ? AppColors.primaryPine : AppColors.borderLight,
+                  color: isFilled
+                      ? (widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine)
+                      : (widget.isDarkMode ? AppColors.borderCardDark : AppColors.borderLight),
                   width: 2,
                 ),
               ),
@@ -1084,10 +1225,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 borderRadius: BorderRadius.circular(30),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLow,
+                    color: widget.isDarkMode
+                        ? AppColors.cardDark
+                        : AppColors.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(30),
                   ),
-                  child: const Icon(Icons.face, color: AppColors.primaryPine, size: 28),
+                  child: Icon(
+                    Icons.face,
+                    color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
+                    size: 28,
+                  ),
                 ),
               );
             }
@@ -1106,10 +1253,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 borderRadius: BorderRadius.circular(30),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLow,
+                    color: widget.isDarkMode
+                        ? AppColors.cardDark
+                        : AppColors.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(30),
                   ),
-                  child: const Icon(Icons.backspace_outlined, size: 22, color: AppColors.textMuted),
+                  child: Icon(
+                    Icons.backspace_outlined,
+                    size: 22,
+                    color: widget.isDarkMode ? AppColors.textLightMuted : AppColors.textMuted,
+                  ),
                 ),
               );
             }
@@ -1121,10 +1274,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
         TextButton.icon(
           onPressed: () => setState(() => _authModeIndex = 0),
-          icon: const Icon(Icons.key, size: 16, color: AppColors.primaryPine),
-          label: const Text(
+          icon: Icon(
+            Icons.key,
+            size: 16,
+            color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
+          ),
+          label: Text(
             'Use password instead',
-            style: TextStyle(color: AppColors.primaryPine, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],
@@ -1154,10 +1314,10 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Center(
           child: Text(
             digit,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
+              color: widget.isDarkMode ? AppColors.textLight : AppColors.textDark,
             ),
           ),
         ),

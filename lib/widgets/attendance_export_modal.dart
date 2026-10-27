@@ -932,12 +932,14 @@ class _AttendanceExportModalState extends State<AttendanceExportModal> {
             // Excel Container Box
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFCBD5E1)),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
@@ -969,10 +971,10 @@ class _AttendanceExportModalState extends State<AttendanceExportModal> {
                             : _selectedUsers.length == 1
                                 ? 'Attendance Report: ${_selectedUsers.first}  |  Date: ${_formatDate(_startDate)} to ${_formatDate(_endDate)}'
                                 : 'Attendance Report: ${_selectedUsers.length} Selected Employees  |  Date: ${_formatDate(_startDate)} to ${_formatDate(_endDate)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF0F172A),
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -1060,7 +1062,11 @@ class _AttendanceExportModalState extends State<AttendanceExportModal> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: recordsPreview.take(5).length,
-                    separatorBuilder: (_, _) => const Divider(height: 1, thickness: 0.5, color: Color(0xFFE2E8F0)),
+                    separatorBuilder: (_, _) => Divider(
+                      height: 1,
+                      thickness: 0.5,
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    ),
                     itemBuilder: (context, idx) {
                       final r = recordsPreview[idx];
                       final isPresent = r.attendance == 'Present';
@@ -1106,10 +1112,10 @@ class _AttendanceExportModalState extends State<AttendanceExportModal> {
                               flex: 3,
                               child: Text(
                                 r.employeeName,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF0F172A),
+                                  color: isDark ? Colors.white : const Color(0xFF0F172A),
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
