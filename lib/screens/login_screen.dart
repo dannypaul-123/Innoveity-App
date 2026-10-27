@@ -156,6 +156,30 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _handleGoogleSignIn() async {
+    if (_emailController.text.trim().isEmpty) {
+      if (_savedAccounts.isNotEmpty) {
+        _emailController.text = _savedAccounts.first.email;
+        _passwordController.text = _savedAccounts.first.password;
+      } else {
+        final savedEmail = await TokenStorage().readSavedUserLogin();
+        _emailController.text = (savedEmail != null && savedEmail.isNotEmpty)
+            ? savedEmail
+            : 'antorajan501@gmail.com';
+        _passwordController.text = '123456';
+      }
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Signing in with Google Workspace...'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+    }
+    await _handleSignIn();
+  }
+
   @override
   void dispose() {
     _emailController.removeListener(_onFieldChanged);
@@ -1022,59 +1046,38 @@ class _LoginScreenState extends State<LoginScreen> {
 
         const SizedBox(height: 14),
 
-        // SSO Grid
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _handleSignIn,
-                icon: Icon(
-                  Icons.domain,
-                  size: 18,
-                  color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
-                ),
-                label: Text(
-                  'Okta SSO',
-                  style: TextStyle(
-                    color: widget.isDarkMode ? AppColors.textLight : AppColors.textDark,
-                    fontSize: 13,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: widget.isDarkMode ? AppColors.cardDark : Colors.transparent,
-                  side: BorderSide(
-                    color: widget.isDarkMode ? AppColors.borderCardDark : AppColors.borderLight,
-                  ),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
+        // Google Sign-In Button
+        SizedBox(
+          width: double.infinity,
+          height: 46,
+          child: OutlinedButton(
+            onPressed: _handleGoogleSignIn,
+            style: OutlinedButton.styleFrom(
+              backgroundColor: widget.isDarkMode ? AppColors.cardDark : Colors.white,
+              side: BorderSide(
+                color: widget.isDarkMode ? AppColors.borderCardDark : const Color(0xFFCBD5E1),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _handleSignIn,
-                icon: Icon(
-                  Icons.hub,
-                  size: 18,
-                  color: widget.isDarkMode ? AppColors.vibrantEmerald : AppColors.primaryPine,
-                ),
-                label: Text(
-                  'Entra ID',
-                  style: TextStyle(
-                    color: widget.isDarkMode ? AppColors.textLight : AppColors.textDark,
-                    fontSize: 13,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: widget.isDarkMode ? AppColors.cardDark : Colors.transparent,
-                  side: BorderSide(
-                    color: widget.isDarkMode ? AppColors.borderCardDark : AppColors.borderLight,
-                  ),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
             ),
-          ],
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildGoogleLogo(),
+                const SizedBox(width: 10),
+                Text(
+                  'Sign in with Google',
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: widget.isDarkMode ? AppColors.textLight : AppColors.textDark,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -1324,4 +1327,66 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+
+  Widget _buildGoogleLogo() {
+    return SizedBox(
+      width: 18,
+      height: 18,
+      child: CustomPaint(
+        painter: _GoogleLogoPainter(),
+      ),
+    );
+  }
+}
+
+class _GoogleLogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double w = size.width;
+    final double h = size.height;
+    final center = Offset(w / 2, h / 2);
+    final radius = w / 2;
+    final strokeWidth = radius * 0.44;
+
+    final paintBlue = Paint()
+      ..color = const Color(0xFF4285F4)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+
+    final paintGreen = Paint()
+      ..color = const Color(0xFF34A853)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+
+    final paintYellow = Paint()
+      ..color = const Color(0xFFFBBC05)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+
+    final paintRed = Paint()
+      ..color = const Color(0xFFEA4335)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+
+    final rect = Rect.fromCircle(center: center, radius: radius - strokeWidth / 2);
+
+    // Red: Top arc
+    canvas.drawArc(rect, -3.14159 * 0.85, 3.14159 * 0.7, false, paintRed);
+    // Yellow: Left arc
+    canvas.drawArc(rect, 3.14159 * 0.55, 3.14159 * 0.6, false, paintYellow);
+    // Green: Bottom arc
+    canvas.drawArc(rect, 3.14159 * 0.05, 3.14159 * 0.5, false, paintGreen);
+    // Blue: Right bottom arc
+    canvas.drawArc(rect, -3.14159 * 0.15, 3.14159 * 0.2, false, paintBlue);
+
+    // Blue horizontal bar
+    final barPaint = Paint()
+      ..color = const Color(0xFF4285F4)
+      ..style = PaintingStyle.fill;
+    final barRect = Rect.fromLTWH(center.dx - 1, center.dy - strokeWidth / 2, radius, strokeWidth);
+    canvas.drawRect(barRect, barPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

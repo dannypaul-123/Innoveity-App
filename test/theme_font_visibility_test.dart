@@ -89,9 +89,9 @@ void main() {
       final passLabel = tester.widget<Text>(find.text('Password'));
       expect(passLabel.style?.color, equals(AppColors.textLight));
 
-      // Check Okta SSO button text is textLight in dark mode
-      final oktaLabel = tester.widget<Text>(find.text('Okta SSO'));
-      expect(oktaLabel.style?.color, equals(AppColors.textLight));
+      // Check Sign in with Google button text is textLight in dark mode
+      final googleLabel = tester.widget<Text>(find.text('Sign in with Google'));
+      expect(googleLabel.style?.color, equals(AppColors.textLight));
 
       // Switch to PIN tab
       await tester.tap(find.text('PIN / Passcode'));
@@ -143,6 +143,10 @@ void main() {
       // Check Password label is textDark in light mode
       final passLabel = tester.widget<Text>(find.text('Password'));
       expect(passLabel.style?.color, equals(AppColors.textDark));
+
+      // Check Sign in with Google button text is textDark in light mode
+      final googleLabel = tester.widget<Text>(find.text('Sign in with Google'));
+      expect(googleLabel.style?.color, equals(AppColors.textDark));
 
       // Switch to PIN tab
       await tester.tap(find.text('PIN / Passcode'));
