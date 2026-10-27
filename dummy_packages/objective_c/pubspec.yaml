@@ -1,0 +1,5 @@
+name: objective_c
+version: 9.5.0
+description: Dummy package override to bypass Windows path space hook error.
+environment:
+  sdk: ^3.0.0

@@ -1,0 +1,68 @@
+class CrmTask {
+  final String id, title, status;
+  final String? description,
+      priority,
+      deadline,
+      assigneeId,
+      creatorId,
+      teamId,
+      projectId,
+      approvalStatus,
+      reviewStatus;
+  final List<dynamic> attachments;
+  final num? storyPoints, estimatedHours, actualHours;
+  const CrmTask({
+    required this.id,
+    required this.title,
+    required this.status,
+    this.description,
+    this.priority,
+    this.deadline,
+    this.assigneeId,
+    this.creatorId,
+    this.teamId,
+    this.projectId,
+    this.approvalStatus,
+    this.reviewStatus,
+    this.attachments = const [],
+    this.storyPoints,
+    this.estimatedHours,
+    this.actualHours,
+  });
+  factory CrmTask.fromJson(Map<String, dynamic> j) => CrmTask(
+    id: '${j['id']}',
+    title: '${j['title']}',
+    status: '${j['status']}',
+    description: j['description']?.toString(),
+    priority: j['priority']?.toString(),
+    deadline: j['deadline']?.toString(),
+    assigneeId: j['assigneeId']?.toString(),
+    creatorId: j['creatorId']?.toString(),
+    teamId: j['teamId']?.toString(),
+    projectId: j['projectId']?.toString(),
+    attachments: (j['attachments'] as List?) ?? [],
+    storyPoints: j['storyPoints'] as num?,
+    estimatedHours: j['estimatedHours'] as num?,
+    actualHours: j['actualHours'] as num?,
+    approvalStatus: j['approvalStatus']?.toString(),
+    reviewStatus: j['reviewStatus']?.toString(),
+  );
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'description': description,
+    'priority': priority,
+    'status': status,
+    'deadline': deadline,
+    'assigneeId': assigneeId,
+    'creatorId': creatorId,
+    'teamId': teamId,
+    'projectId': projectId,
+    'attachments': attachments,
+    'storyPoints': storyPoints,
+    'estimatedHours': estimatedHours,
+    'actualHours': actualHours,
+    'approvalStatus': approvalStatus,
+    'reviewStatus': reviewStatus,
+  };
+}

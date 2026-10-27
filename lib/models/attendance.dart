@@ -1,0 +1,60 @@
+class Attendance {
+  final String id, userId, date, status;
+  final String? clockIn,
+      clockOut,
+      clockInLocation,
+      clockOutLocation,
+      workLocation,
+      shiftId,
+      scheduledStartTime,
+      scheduledEndTime;
+  final num? workingHours, lateMinutes;
+  const Attendance({
+    required this.id,
+    required this.userId,
+    required this.date,
+    required this.status,
+    this.clockIn,
+    this.clockOut,
+    this.clockInLocation,
+    this.clockOutLocation,
+    this.workingHours,
+    this.lateMinutes,
+    this.workLocation,
+    this.shiftId,
+    this.scheduledStartTime,
+    this.scheduledEndTime,
+  });
+  factory Attendance.fromJson(Map<String, dynamic> j) => Attendance(
+    id: '${j['id']}',
+    userId: '${j['userId']}',
+    date: '${j['date']}',
+    status: '${j['status'] ?? ''}',
+    clockIn: j['clockIn']?.toString(),
+    clockOut: j['clockOut']?.toString(),
+    clockInLocation: j['clockInLocation']?.toString(),
+    clockOutLocation: j['clockOutLocation']?.toString(),
+    workingHours: j['workingHours'] as num?,
+    lateMinutes: j['lateMinutes'] as num?,
+    workLocation: j['workLocation']?.toString(),
+    shiftId: j['shiftId']?.toString(),
+    scheduledStartTime: j['scheduledStartTime']?.toString(),
+    scheduledEndTime: j['scheduledEndTime']?.toString(),
+  );
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'userId': userId,
+    'date': date,
+    'clockIn': clockIn,
+    'clockOut': clockOut,
+    'clockInLocation': clockInLocation,
+    'clockOutLocation': clockOutLocation,
+    'workingHours': workingHours,
+    'status': status,
+    'lateMinutes': lateMinutes,
+    'workLocation': workLocation,
+    'shiftId': shiftId,
+    'scheduledStartTime': scheduledStartTime,
+    'scheduledEndTime': scheduledEndTime,
+  };
+}
