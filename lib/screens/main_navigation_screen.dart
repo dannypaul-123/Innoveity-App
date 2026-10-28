@@ -209,11 +209,6 @@ class MainNavigationScreen extends StatelessWidget {
         isDarkMode: state.isDarkMode,
         onUpdateProfile: state.updateProfileDetails,
         onUpdateAvatar: state.updateAvatar,
-        currentClockTime: state.currentClockTime,
-        isCustomClock: state.isCustomClockActive,
-        onUpdateClockTime: state.setCustomClockTime,
-        onResetClockToLive: state.resetClockToLive,
-        getCurrentClockTime: () => state.currentClockTime,
       ),
     ];
 
