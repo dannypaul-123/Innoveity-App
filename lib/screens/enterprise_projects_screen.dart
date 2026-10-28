@@ -258,7 +258,8 @@ class _EnterpriseProjectsViewState extends State<EnterpriseProjectsView> {
     final muted = isDark ? AppColors.textLightMuted : const Color(0xFF64748B);
     final activeText = isDark ? AppColors.textLight : const Color(0xFF0F172A);
 
-    return Row(
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Text(
           'Portal',
@@ -343,73 +344,81 @@ class _EnterpriseProjectsViewState extends State<EnterpriseProjectsView> {
           ],
         );
 
-        final rightControls = Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: isNarrow ? constraints.maxWidth * 0.55 : 240,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isDark
-                      ? const Color(0xFF334155)
-                      : const Color(0xFFE2E8F0),
-                  width: 1.0,
-                ),
+        Widget buildSearchBar({required double width}) {
+          return Container(
+            width: width,
+            height: 44,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                width: 1.0,
               ),
-              child: TextField(
-                controller: _searchCtrl,
-                style: TextStyle(
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1.5),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: _searchCtrl,
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? AppColors.textLight : const Color(0xFF1E293B),
+              ),
+              decoration: InputDecoration(
+                hintText: 'Search by code, title, or lead...',
+                hintStyle: TextStyle(
                   fontSize: 12.5,
-                  color: isDark ? AppColors.textLight : const Color(0xFF1E293B),
+                  color: isDark ? AppColors.textLightMuted : const Color(0xFF94A3B8),
                 ),
-                decoration: InputDecoration(
-                  hintText: 'Search by code, title, or lead...',
-                  hintStyle: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? AppColors.textLightMuted : const Color(0xFF94A3B8),
-                  ),
-                  prefixIcon: Icon(
-                    Icons.search_rounded,
-                    size: 18,
-                    color: isDark ? AppColors.textLightMuted : const Color(0xFF94A3B8),
-                  ),
-                  suffixIcon: _searchCtrl.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, size: 16),
-                          onPressed: () => _searchCtrl.clear(),
-                        )
-                      : null,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                  border: InputBorder.none,
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  size: 20,
+                  color: isDark ? AppColors.textLightMuted : const Color(0xFF94A3B8),
                 ),
+                suffixIcon: _searchCtrl.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 16),
+                        onPressed: () => _searchCtrl.clear(),
+                      )
+                    : null,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                border: InputBorder.none,
               ),
             ),
-            const SizedBox(width: 10),
-            ElevatedButton.icon(
+          );
+        }
+
+        Widget buildCreateButton({double? width}) {
+          return SizedBox(
+            width: width,
+            height: 44,
+            child: ElevatedButton.icon(
               onPressed: () => _openCreateProjectWizard(context),
-              icon: const Icon(Icons.add_rounded, size: 18, color: Colors.white),
+              icon: const Icon(Icons.add_rounded, size: 20, color: Colors.white),
               label: const Text(
                 'Create New Project',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 13,
+                  fontSize: 13.5,
                   color: Colors.white,
                 ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryOrange,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
             ),
-          ],
-        );
+          );
+        }
 
         if (isNarrow) {
           return Column(
@@ -417,10 +426,9 @@ class _EnterpriseProjectsViewState extends State<EnterpriseProjectsView> {
             children: [
               leftSide,
               const SizedBox(height: 14),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: rightControls,
-              ),
+              buildSearchBar(width: double.infinity),
+              const SizedBox(height: 10),
+              buildCreateButton(width: double.infinity),
             ],
           );
         }
@@ -430,7 +438,9 @@ class _EnterpriseProjectsViewState extends State<EnterpriseProjectsView> {
           children: [
             Expanded(child: leftSide),
             const SizedBox(width: 16),
-            rightControls,
+            buildSearchBar(width: 260),
+            const SizedBox(width: 10),
+            buildCreateButton(),
           ],
         );
       },
@@ -460,7 +470,10 @@ class _EnterpriseProjectsViewState extends State<EnterpriseProjectsView> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isWide = constraints.maxWidth >= 900;
-        final isMedium = constraints.maxWidth >= 550 && !isWide;
+        final columns = isWide ? 6 : 3;
+        final spacing = 8.0;
+        final totalSpacing = spacing * (columns - 1);
+        final cardWidth = (constraints.maxWidth - totalSpacing) / columns;
 
         if (isWide) {
           return Row(
@@ -480,35 +493,15 @@ class _EnterpriseProjectsViewState extends State<EnterpriseProjectsView> {
               );
             }).toList(),
           );
-        } else if (isMedium) {
-          return Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: metrics.map((m) {
-              final w = (constraints.maxWidth - 16) / 3;
-              return SizedBox(
-                width: w,
-                child: _buildMetricCard(
-                  label: m['label'] as String,
-                  value: m['value'] as int,
-                  valueColor: m['color'] as Color,
-                  bgCard: bgCard,
-                  borderColor: borderColor,
-                  isDark: isDark,
-                ),
-              );
-            }).toList(),
-          );
         }
 
-        // Mobile: 2 columns
+        // Clean 3-column x 2-row grid on mobile and tablet
         return Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: spacing,
+          runSpacing: spacing,
           children: metrics.map((m) {
-            final w = (constraints.maxWidth - 8) / 2;
             return SizedBox(
-              width: w,
+              width: cardWidth,
               child: _buildMetricCard(
                 label: m['label'] as String,
                 value: m['value'] as int,
@@ -533,36 +526,39 @@ class _EnterpriseProjectsViewState extends State<EnterpriseProjectsView> {
     required bool isDark,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
         color: bgCard,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: borderColor, width: 1.0),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            blurRadius: 4,
+            offset: const Offset(0, 1.5),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: FontWeight.w700,
               color: isDark ? AppColors.textLightMuted : const Color(0xFF64748B),
-              letterSpacing: 0.5,
+              letterSpacing: 0.3,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             '$value',
             style: TextStyle(
-              fontSize: 26,
+              fontSize: 22,
               fontWeight: FontWeight.w800,
               color: valueColor,
             ),
@@ -573,12 +569,36 @@ class _EnterpriseProjectsViewState extends State<EnterpriseProjectsView> {
   }
 
   Widget _buildFilterPills(bool isDark, Color primaryOrange) {
+    int getCount(String filter) {
+      switch (filter) {
+        case 'Active':
+          return widget.state.activeProjects.length;
+        case 'Overdue':
+          return widget.state.overdueProjects.length;
+        case 'Draft':
+          return widget.state.draftProjects.length;
+        case 'Scheduled':
+          return widget.state.scheduledProjects.length;
+        case 'On Hold':
+          return widget.state.onHoldProjects.length;
+        case 'Completed':
+          return widget.state.completedProjects.length;
+        case 'Archived':
+          return widget.state.archivedProjects.length;
+        case 'All Projects':
+        default:
+          return widget.state.projects.length;
+      }
+    }
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
       child: Row(
         children: _filters.map((filter) {
           final isSelected = _selectedFilter == filter;
+          final count = getCount(filter);
+
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: InkWell(
@@ -590,11 +610,11 @@ class _EnterpriseProjectsViewState extends State<EnterpriseProjectsView> {
               borderRadius: BorderRadius.circular(20),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? primaryOrange
-                      : (isDark ? const Color(0xFF1E293B) : Colors.transparent),
+                      : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC)),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: isSelected
@@ -603,15 +623,40 @@ class _EnterpriseProjectsViewState extends State<EnterpriseProjectsView> {
                     width: 1.0,
                   ),
                 ),
-                child: Text(
-                  filter,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected
-                        ? Colors.white
-                        : (isDark ? AppColors.textLightMuted : const Color(0xFF64748B)),
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      filter,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color: isSelected
+                            ? Colors.white
+                            : (isDark ? AppColors.textLightMuted : const Color(0xFF64748B)),
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? Colors.white.withValues(alpha: 0.25)
+                            : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '$count',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: isSelected
+                              ? Colors.white
+                              : (isDark ? AppColors.textLight : const Color(0xFF475569)),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -733,64 +778,72 @@ class _EnterpriseProjectsViewState extends State<EnterpriseProjectsView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top Bar of Card
+          // Top Bar of Card (Responsive Wrap)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-            child: Row(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                // Project Code Chip
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: primaryOrange.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: primaryOrange.withValues(alpha: 0.3)),
-                  ),
-                  child: Text(
-                    project.code,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: primaryOrange,
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    // Project Code Chip
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: primaryOrange.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: primaryOrange.withValues(alpha: 0.3)),
+                      ),
+                      child: Text(
+                        project.code,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: primaryOrange,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // Priority Chip
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: priorityColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: priorityColor.withValues(alpha: 0.3)),
-                  ),
-                  child: Text(
-                    '${project.priority} Priority',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: priorityColor,
+                    // Priority Chip
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: priorityColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: priorityColor.withValues(alpha: 0.3)),
+                      ),
+                      child: Text(
+                        '${project.priority} Priority',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: priorityColor,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // Project Type Chip
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    project.projectType,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.textLightMuted : const Color(0xFF64748B),
+                    // Project Type Chip
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        project.projectType,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? AppColors.textLightMuted : const Color(0xFF64748B),
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-                const Spacer(),
                 // Status badge
                 _buildProjectStatusBadge(project.status, isDark),
               ],
@@ -832,56 +885,73 @@ class _EnterpriseProjectsViewState extends State<EnterpriseProjectsView> {
           // Timeline, Leader, Team info strip
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Wrap(
-              spacing: 16,
-              runSpacing: 6,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+            child: LayoutBuilder(
+              builder: (context, infoConstraints) {
+                return Wrap(
+                  spacing: 14,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Icon(Icons.calendar_today_outlined, size: 14, color: isDark ? AppColors.textLightMuted : const Color(0xFF64748B)),
-                    const SizedBox(width: 5),
-                    Text(
-                      '${DateFormat('dd-MM-yyyy').format(project.startDate)} — ${DateFormat('dd-MM-yyyy').format(project.endDate)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark ? AppColors.textLightMuted : const Color(0xFF64748B),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: infoConstraints.maxWidth),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.calendar_today_outlined, size: 13, color: isDark ? AppColors.textLightMuted : const Color(0xFF64748B)),
+                          const SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              '${DateFormat('dd-MM-yyyy').format(project.startDate)} — ${DateFormat('dd-MM-yyyy').format(project.endDate)}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark ? AppColors.textLightMuted : const Color(0xFF64748B),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                    if (project.projectLeaderName != null)
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: infoConstraints.maxWidth),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.person_outline_rounded, size: 14, color: isDark ? AppColors.textLightMuted : const Color(0xFF64748B)),
+                            const SizedBox(width: 5),
+                            Flexible(
+                              child: Text(
+                                'Leader: ${project.projectLeaderName}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? AppColors.textLight : const Color(0xFF1E293B),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (project.memberNames.isNotEmpty)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.group_outlined, size: 14, color: isDark ? AppColors.textLightMuted : const Color(0xFF64748B)),
+                          const SizedBox(width: 5),
+                          Text(
+                            '${project.memberNames.length} Members',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark ? AppColors.textLightMuted : const Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
                   ],
-                ),
-                if (project.projectLeaderName != null)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.person_outline_rounded, size: 14, color: isDark ? AppColors.textLightMuted : const Color(0xFF64748B)),
-                      const SizedBox(width: 5),
-                      Text(
-                        'Leader: ${project.projectLeaderName}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.textLight : const Color(0xFF1E293B),
-                        ),
-                      ),
-                    ],
-                  ),
-                if (project.memberNames.isNotEmpty)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.group_outlined, size: 14, color: isDark ? AppColors.textLightMuted : const Color(0xFF64748B)),
-                      const SizedBox(width: 5),
-                      Text(
-                        '${project.memberNames.length} Members',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isDark ? AppColors.textLightMuted : const Color(0xFF64748B),
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
+                );
+              },
             ),
           ),
 
@@ -896,14 +966,18 @@ class _EnterpriseProjectsViewState extends State<EnterpriseProjectsView> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Workflow Pipeline (${project.workflowStages.length} Stages)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: isDark ? AppColors.textLightMuted : const Color(0xFF64748B),
+                    Expanded(
+                      child: Text(
+                        'Workflow Pipeline (${project.workflowStages.length} Stages)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? AppColors.textLightMuted : const Color(0xFF64748B),
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Text(
                       '${project.progressPercent}% Complete',
                       style: TextStyle(
@@ -938,12 +1012,14 @@ class _EnterpriseProjectsViewState extends State<EnterpriseProjectsView> {
                     children: [
                       const Icon(Icons.warning_amber_rounded, size: 18, color: Color(0xFFDC2626)),
                       const SizedBox(width: 8),
-                      Text(
-                        'Stage "${curStage.name}" Rejected by Admin — Redo Required',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF991B1B),
+                      Expanded(
+                        child: Text(
+                          'Stage "${curStage.name}" Rejected by Admin — Redo Required',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF991B1B),
+                          ),
                         ),
                       ),
                     ],
@@ -1006,25 +1082,47 @@ class _EnterpriseProjectsViewState extends State<EnterpriseProjectsView> {
           // Actions Footer
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
+            child: Wrap(
+              spacing: 10,
+              runSpacing: 8,
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 // Current Stage Tag
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'Current Stage: ${curStage.name}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? AppColors.textLight : const Color(0xFF1E293B),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
                     ),
                   ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: isRejected
+                              ? const Color(0xFFEF4444)
+                              : (isAwaiting ? const Color(0xFF8B5CF6) : primaryOrange),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Stage: ${curStage.name}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? AppColors.textLight : const Color(0xFF1E293B),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const Spacer(),
 
                 // Admin Review Button
                 if (widget.state.isAdmin) ...[
@@ -1035,8 +1133,8 @@ class _EnterpriseProjectsViewState extends State<EnterpriseProjectsView> {
                       label: const Text('Review Stage Approval', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryOrange,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
                   ] else if (!project.isCompleted) ...[
@@ -1046,8 +1144,8 @@ class _EnterpriseProjectsViewState extends State<EnterpriseProjectsView> {
                       label: Text('Manage Stage', style: TextStyle(color: primaryOrange, fontWeight: FontWeight.w700, fontSize: 12)),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: primaryOrange),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
                   ],
@@ -1075,25 +1173,32 @@ class _EnterpriseProjectsViewState extends State<EnterpriseProjectsView> {
                       label: const Text('Redo & Resubmit to Admin', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF059669),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
                   ] else if (isAwaiting) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFFFBEB),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: const Color(0xFFFDE68A)),
                       ),
-                      child: const Text(
-                        'Under Admin Review',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFD97706),
-                        ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.hourglass_top_rounded, size: 14, color: Color(0xFFD97706)),
+                          SizedBox(width: 5),
+                          Text(
+                            'Under Admin Review',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFD97706),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ] else if (!project.isCompleted) ...[
@@ -1111,8 +1216,8 @@ class _EnterpriseProjectsViewState extends State<EnterpriseProjectsView> {
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryOrange,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
                   ],
@@ -1501,14 +1606,18 @@ class _ProjectWorkflowSetupWizardDialogState
 
             // Dialog Footer Navigation matching Images 2-5
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              child: Row(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   if (_currentStep == 1)
                     OutlinedButton(
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         side: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
                       ),
@@ -1524,7 +1633,7 @@ class _ProjectWorkflowSetupWizardDialogState
                     OutlinedButton(
                       onPressed: _prevStep,
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         side: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
                       ),
@@ -1536,13 +1645,12 @@ class _ProjectWorkflowSetupWizardDialogState
                         ),
                       ),
                     ),
-                  const Spacer(),
                   if (_currentStep < 5)
                     ElevatedButton(
                       onPressed: _nextStep,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: themeColor,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       child: const Row(
@@ -1559,14 +1667,14 @@ class _ProjectWorkflowSetupWizardDialogState
                       onPressed: _launchProject,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryGreen,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.auto_awesome_rounded, size: 18, color: Colors.white),
-                          SizedBox(width: 8),
+                          Icon(Icons.auto_awesome_rounded, size: 16, color: Colors.white),
+                          SizedBox(width: 6),
                           Text('Launch Project & Workflow', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                         ],
                       ),
@@ -2809,51 +2917,49 @@ class _ProjectStageReviewDialogState extends State<ProjectStageReviewDialog> {
             ],
 
             // Actions
-            Row(
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              alignment: WrapAlignment.end,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 if (!_isRejecting) ...[
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => setState(() => _isRejecting = true),
-                      icon: const Icon(Icons.close_rounded, color: Color(0xFFDC2626), size: 16),
-                      label: const Text('Reject Stage (Demand Redo)', style: TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.bold, fontSize: 12)),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFDC2626)),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
+                  OutlinedButton.icon(
+                    onPressed: () => setState(() => _isRejecting = true),
+                    icon: const Icon(Icons.close_rounded, color: Color(0xFFDC2626), size: 16),
+                    label: const Text('Reject Stage (Demand Redo)', style: TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.bold, fontSize: 12)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFDC2626)),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _approve,
-                      icon: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
-                      label: const Text('Approve & Advance', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF059669),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
+                  ElevatedButton.icon(
+                    onPressed: _approve,
+                    icon: const Icon(Icons.check_rounded, color: Colors.white, size: 16),
+                    label: const Text('Approve & Advance', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF059669),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
                 ] else ...[
                   OutlinedButton(
                     onPressed: () => setState(() => _isRejecting = false),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
-                  const Spacer(),
                   ElevatedButton.icon(
                     onPressed: _reject,
                     icon: const Icon(Icons.cancel_rounded, color: Colors.white, size: 16),
                     label: const Text('Confirm Rejection & Require Redo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFDC2626),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),

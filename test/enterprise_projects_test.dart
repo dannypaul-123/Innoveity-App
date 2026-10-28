@@ -334,5 +334,35 @@ void main() {
         state.dispose();
       }
     });
+
+    testWidgets('Renders cleanly on narrow mobile screen without overflow', (tester) async {
+      tester.view.physicalSize = const Size(360, 780);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final state = AppState();
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: EnterpriseProjectsView(
+                state: state,
+                isDark: false,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Verify elements render without clipping or exception
+        expect(find.text('Enterprise Projects'), findsOneWidget);
+        expect(find.text('Create New Project'), findsWidgets);
+        expect(find.text('TOTAL PROJECTS'), findsOneWidget);
+        expect(find.text('Enterprise Mobile CRM App'), findsOneWidget);
+      } finally {
+        await tester.pumpWidget(const SizedBox());
+        state.dispose();
+      }
+    });
   });
 }
