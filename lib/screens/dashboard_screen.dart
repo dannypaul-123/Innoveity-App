@@ -5,6 +5,7 @@ import '../models/app_models.dart';
 import '../services/push_notification_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_avatar.dart';
+import '../widgets/split_flap_clock.dart';
 
 class DashboardScreen extends StatefulWidget {
   final List<TaskItem> tasks;
@@ -316,61 +317,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ],
     );
 
-    final clockSection = Container(
+    final clockSection = SizedBox(
       width: isCompact ? double.infinity : null,
-      constraints: isCompact ? null : const BoxConstraints(minWidth: 170, maxWidth: 220),
-      padding: EdgeInsets.symmetric(horizontal: isCompact ? 16 : 14, vertical: isCompact ? 14 : 10),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F172A).withValues(alpha: 0.7) : const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-          width: 1.2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: double.infinity,
-            child: Center(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  _formatLiveClockTime(),
-                  style: TextStyle(
-                    fontSize: isCompact ? 52 : 36,
-                    fontWeight: FontWeight.w900,
-                    fontFamily: 'monospace',
-                    letterSpacing: 2.0,
-                    color: const Color(0xFFEA580C),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              _formatLiveClockDate(),
-              style: TextStyle(
-                fontSize: isCompact ? 13 : 11.5,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.4,
-                color: isDark ? AppColors.textLightMuted : AppColors.textMuted,
-              ),
-            ),
-          ),
-        ],
+      child: SplitFlapClock(
+        currentTime: _currentTime,
+        isDark: isDark,
       ),
     );
 
