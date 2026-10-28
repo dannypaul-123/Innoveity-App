@@ -323,6 +323,11 @@ class AppState extends ChangeNotifier {
     return _projects.where((p) => p.isMember(emailOrId)).toList();
   }
 
+  List<EnterpriseProject> get assignedProjectsForCurrentUser {
+    if (isAdmin) return projects;
+    return _projects.where((p) => p.isAssignedToUser(userProfile)).toList();
+  }
+
   Future<void> _loadSavedProjects() async {
     try {
       final prefs = await SharedPreferences.getInstance();

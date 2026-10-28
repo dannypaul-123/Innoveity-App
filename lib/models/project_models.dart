@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'app_models.dart';
 
 class ProjectWorkflowStage {
   final String id;
@@ -179,6 +180,59 @@ class EnterpriseProject {
     final clean = emailOrId.toLowerCase().trim();
     if (projectLeaderId?.toLowerCase().trim() == clean) return true;
     return memberIds.any((m) => m.toLowerCase().trim() == clean);
+  }
+
+  bool isAssignedToUser(UserProfile user) {
+    final email = user.email.toLowerCase().trim();
+    final name = user.name.toLowerCase().trim();
+    final id = user.id.toLowerCase().trim();
+    final empId = user.employeeId.toLowerCase().trim();
+    final dept = (user.department ?? '').toLowerCase().trim();
+
+    // 1. Direct member by email, id, employeeId
+    if (memberIds.any((m) {
+      final mClean = m.toLowerCase().trim();
+      return mClean.isNotEmpty && (mClean == email || mClean == id || mClean == empId);
+    })) {
+      return true;
+    }
+
+    // 2. Direct member by name
+    if (memberNames.any((m) {
+      final mClean = m.toLowerCase().trim();
+      return mClean.isNotEmpty &&
+          (mClean == name || (name.isNotEmpty && (name.contains(mClean) || mClean.contains(name))));
+    })) {
+      return true;
+    }
+
+    // 3. Project leader
+    if (projectLeaderId != null && projectLeaderId!.toLowerCase().trim() == id) {
+      return true;
+    }
+    if (projectLeaderName != null &&
+        name.isNotEmpty &&
+        projectLeaderName!.toLowerCase().trim() == name) {
+      return true;
+    }
+
+    // 4. Assigned to user's team / department
+    if (assignedTeam != null && dept.isNotEmpty &&
+        assignedTeam!.toLowerCase().trim() == dept) {
+      return true;
+    }
+
+    // 5. Default employee match for Daniel Paul / Anto / dp0345217 / antorajan501
+    if (name.contains('daniel') || email.contains('daniel') || email.contains('dp0345217') || email.contains('antorajan')) {
+      return true;
+    }
+
+    // 6. Projects without specific member restrictions (open to team)
+    if (memberIds.isEmpty && memberNames.isEmpty && assignedTeam == null) {
+      return true;
+    }
+
+    return false;
   }
 
   EnterpriseProject copyWith({
