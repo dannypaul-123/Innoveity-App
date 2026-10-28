@@ -441,9 +441,22 @@ class _AttendanceExportModalState extends State<AttendanceExportModal> {
         startDate: _startDate,
         endDate: _endDate,
         allEmployees: widget.allEmployees,
+        context: context,
       );
 
       if (mounted) {
+        if (target == null) {
+          setState(() => _isExporting = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              backgroundColor: AppColors.alertText,
+              content: Text('Export cancelled. Storage permission is required to save to Downloads.'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+          return;
+        }
+
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -456,9 +469,7 @@ class _AttendanceExportModalState extends State<AttendanceExportModal> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    target != null
-                        ? 'Excel file exported for ${selectedList.length} employee${selectedList.length == 1 ? '' : 's'} successfully!\n$target'
-                        : 'Excel exported for ${selectedList.length} employee${selectedList.length == 1 ? '' : 's'} to downloads!',
+                    'Excel file exported for ${selectedList.length} employee${selectedList.length == 1 ? '' : 's'} successfully!\n$target',
                     style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5),
                   ),
                 ),

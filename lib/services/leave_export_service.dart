@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:excel/excel.dart';
+import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import '../models/app_models.dart';
 import 'file_saver.dart';
@@ -668,6 +669,7 @@ class LeaveExportService {
     List<String>? selectedEmployees,
     String? selectedStatus,
     bool includeBranding = true,
+    BuildContext? context,
   }) async {
     final records = getRecords(
       requests: requests,
@@ -717,7 +719,7 @@ class LeaveExportService {
 
     final fileName = 'leave_records_${userSuffix}_$dateSuffix.csv';
 
-    return await saveAndDownloadFile(bytes, fileName);
+    return await saveAndDownloadFile(bytes, fileName, context: context);
   }
 
   /// Triggers Excel generation, file download/saving, and returns target path
@@ -729,6 +731,7 @@ class LeaveExportService {
     String? selectedEmployee,
     List<String>? selectedEmployees,
     String? selectedStatus,
+    BuildContext? context,
   }) async {
     final records = getRecords(
       requests: requests,
@@ -777,6 +780,6 @@ class LeaveExportService {
 
     final fileName = 'leave_records_${userSuffix}_$dateSuffix.xlsx';
 
-    return await saveAndDownloadFile(bytes, fileName);
+    return await saveAndDownloadFile(bytes, fileName, context: context);
   }
 }

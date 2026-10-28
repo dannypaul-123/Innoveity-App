@@ -9459,16 +9459,25 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> with SingleTicker
     }
     final bytes = buffer.toString().codeUnits;
     final fileName = '${type.toLowerCase()}_registry_${DateTime.now().millisecondsSinceEpoch}.csv';
-    final path = await saveAndDownloadFile(bytes, fileName);
+    final path = await saveAndDownloadFile(bytes, fileName, context: context);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: const Color(0xFF047857),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        content: Text(path != null ? 'Exported $type Registry CSV to $path' : 'Exported $type Registry CSV to Downloads'),
-      ),
-    );
+    if (path != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFF047857),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          content: Text('Exported $type Registry CSV to $path'),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.redAccent,
+          content: Text('Export cancelled or storage permission was not granted.'),
+        ),
+      );
+    }
   }
 }
 

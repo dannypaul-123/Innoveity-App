@@ -503,13 +503,14 @@ class _LeaveExportModalState extends State<LeaveExportModal> {
         selectedEmployees: _selectedUsers.toList(),
         selectedStatus: _selectedStatus,
         includeBranding: _includeBrandingHeader,
+        context: context,
       );
 
       if (!mounted) return;
       setState(() => _isExporting = false);
-      Navigator.pop(context);
 
       if (savedPath != null) {
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: const Color(0xFF10B981),
@@ -533,7 +534,7 @@ class _LeaveExportModalState extends State<LeaveExportModal> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             backgroundColor: Colors.redAccent,
-            content: Text('Failed to export CSV. Please check file permissions.'),
+            content: Text('Export cancelled or storage permission was not granted.'),
           ),
         );
       }
@@ -559,13 +560,14 @@ class _LeaveExportModalState extends State<LeaveExportModal> {
         endDate: _endDate,
         selectedEmployees: _selectedUsers.toList(),
         selectedStatus: _selectedStatus,
+        context: context,
       );
 
       if (!mounted) return;
       setState(() => _isExporting = false);
-      Navigator.pop(context);
 
       if (savedPath != null) {
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: const Color(0xFF10B981),
@@ -589,7 +591,7 @@ class _LeaveExportModalState extends State<LeaveExportModal> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             backgroundColor: Colors.redAccent,
-            content: Text('Failed to export Excel. Please check file permissions.'),
+            content: Text('Export cancelled or storage permission was not granted.'),
           ),
         );
       }

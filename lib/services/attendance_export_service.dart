@@ -1,4 +1,5 @@
 import 'package:excel/excel.dart';
+import 'package:flutter/widgets.dart';
 import '../models/app_models.dart';
 import 'file_saver.dart';
 
@@ -435,6 +436,7 @@ class AttendanceExportService {
     required DateTime startDate,
     required DateTime endDate,
     required List<UserProfile> allEmployees,
+    BuildContext? context,
   }) async {
     final bytes = buildExcelFile(
       selectedEmployeeName: selectedEmployeeName,
@@ -468,6 +470,6 @@ class AttendanceExportService {
 
     final fileName = 'attendance_${userSuffix}_$dateSuffix.xlsx';
 
-    return await saveAndDownloadFile(bytes, fileName);
+    return await saveAndDownloadFile(bytes, fileName, context: context);
   }
 }

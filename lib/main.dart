@@ -7,6 +7,8 @@ import 'screens/main_navigation_screen.dart';
 import 'services/push_notification_service.dart';
 import 'theme/app_theme.dart';
 
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
@@ -46,6 +48,7 @@ class _InnoveityAppState extends State<InnoveityApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: rootNavigatorKey,
       title: 'Innoveity',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,

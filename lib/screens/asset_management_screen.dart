@@ -5,6 +5,7 @@ import '../theme/app_colors.dart';
 import '../widgets/app_drawer.dart';
 import '../widgets/app_dropdown_menu.dart';
 import '../widgets/app_avatar.dart';
+import '../services/file_saver.dart';
 
 class AssetManagementScreen extends StatefulWidget {
   final AppState state;
@@ -847,13 +848,31 @@ class _AssetManagementScreenState extends State<AssetManagementScreen> {
     );
   }
 
-  void _exportCsv() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Exported ${_scopeAssets.length} assets report as CSV!'),
-        backgroundColor: const Color(0xFFEA580C),
-      ),
-    );
+  Future<void> _exportCsv() async {
+    final buffer = StringBuffer();
+    buffer.writeln('Asset ID,Asset Name,Category,Serial Number,Assigned To,Status,Location,Cost (INR)');
+    for (final a in _scopeAssets) {
+      buffer.writeln('${a.id},"${a.name}",${a.category},${a.serialNumber},"${a.assignedTo}",${a.status},"${a.location}",${a.cost.toInt()}');
+    }
+    final bytes = buffer.toString().codeUnits;
+    final fileName = 'assets_inventory_${DateTime.now().millisecondsSinceEpoch}.csv';
+    final path = await saveAndDownloadFile(bytes, fileName, context: context);
+    if (!mounted) return;
+    if (path != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Exported ${_scopeAssets.length} assets report to $path'),
+          backgroundColor: const Color(0xFFEA580C),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.redAccent,
+          content: Text('Export cancelled or storage permission was not granted.'),
+        ),
+      );
+    }
   }
 
   void _showAssetDetailsModal(BuildContext context, SystemAsset asset) {

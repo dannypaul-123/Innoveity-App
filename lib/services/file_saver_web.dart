@@ -1,7 +1,13 @@
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
+import 'package:flutter/widgets.dart';
 
-Future<String?> saveAndDownloadFile(List<int> bytes, String fileName) async {
+Future<String?> saveAndDownloadFile(
+  List<int> bytes,
+  String fileName, {
+  BuildContext? context,
+  bool skipPermissionCheck = false,
+}) async {
   final blob = html.Blob(
     [bytes],
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
