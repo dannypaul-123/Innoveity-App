@@ -31,6 +31,8 @@ class UserProfile {
   final String? reportingManager;
   final String? workMode;
   final String? resumeFileName;
+  final String? companyEmail;
+  final String? personalEmail;
 
   UserProfile({
     required this.id,
@@ -63,7 +65,38 @@ class UserProfile {
     this.reportingManager,
     this.workMode,
     this.resumeFileName,
+    this.companyEmail,
+    this.personalEmail,
   });
+
+  /// Whether a custom corporate mailbox is assigned to this user (e.g. '@enterprise-crm.com' or distinct custom mailbox)
+  bool get hasCustomCompanyEmail {
+    final assigned = companyEmail?.trim().toLowerCase();
+    final primary = email.trim().toLowerCase();
+    final personal = personalEmail?.trim().toLowerCase();
+
+    // Explicit custom company email assigned that differs from personal/google email
+    if (assigned != null && assigned.isNotEmpty) {
+      if (personal != null && personal.isNotEmpty && assigned != personal) return true;
+      if (!assigned.endsWith('@gmail.com') && !assigned.endsWith('@googlemail.com')) return true;
+    }
+
+    // Primary email is a corporate enterprise domain
+    if (primary.endsWith('@enterprise-crm.com')) return true;
+    if (!primary.endsWith('@gmail.com') && !primary.endsWith('@googlemail.com') && primary.contains('@')) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /// Whether the employee/intern's email and company email match the exact same.
+  bool get isCompanyAndEmployeeEmailSame {
+    if (hasCustomCompanyEmail) return false;
+    final assigned = companyEmail?.trim().toLowerCase() ?? email.trim().toLowerCase();
+    final personal = personalEmail?.trim().toLowerCase() ?? email.trim().toLowerCase();
+    return assigned == personal && assigned.isNotEmpty;
+  }
 
   UserProfile copyWith({
     String? id,
@@ -96,6 +129,8 @@ class UserProfile {
     String? reportingManager,
     String? workMode,
     String? resumeFileName,
+    String? companyEmail,
+    String? personalEmail,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -128,6 +163,8 @@ class UserProfile {
       reportingManager: reportingManager ?? this.reportingManager,
       workMode: workMode ?? this.workMode,
       resumeFileName: resumeFileName ?? this.resumeFileName,
+      companyEmail: companyEmail ?? this.companyEmail,
+      personalEmail: personalEmail ?? this.personalEmail,
     );
   }
 
@@ -162,6 +199,8 @@ class UserProfile {
     'reportingManager': reportingManager,
     'workMode': workMode,
     'resumeFileName': resumeFileName,
+    'companyEmail': companyEmail,
+    'personalEmail': personalEmail,
   };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -211,6 +250,8 @@ class UserProfile {
       reportingManager: json['reportingManager']?.toString() ?? json['manager']?.toString(),
       workMode: json['workMode']?.toString(),
       resumeFileName: json['resumeFileName']?.toString() ?? json['resume']?.toString(),
+      companyEmail: json['companyEmail']?.toString(),
+      personalEmail: json['personalEmail']?.toString(),
     );
   }
 }
