@@ -19,10 +19,10 @@ void main() {
         ),
       );
 
-      // Verify flap digits
-      expect(find.text('11'), findsOneWidget);
-      expect(find.text('12'), findsOneWidget);
-      expect(find.text('52'), findsOneWidget);
+      // Verify flap digits (each card renders top and bottom halves)
+      expect(find.text('11'), findsNWidgets(2));
+      expect(find.text('12'), findsNWidgets(2));
+      expect(find.text('52'), findsNWidgets(2));
 
       // Verify AM badge is rendered and PM is present
       expect(find.text('AM'), findsOneWidget);
@@ -52,10 +52,10 @@ void main() {
         ),
       );
 
-      // Verify flap digits (15:45 in 12hr is 03:45)
-      expect(find.text('03'), findsOneWidget);
-      expect(find.text('45'), findsOneWidget);
-      expect(find.text('10'), findsOneWidget);
+      // Verify flap digits (15:45 in 12hr is 03:45, top and bottom halves)
+      expect(find.text('03'), findsNWidgets(2));
+      expect(find.text('45'), findsNWidgets(2));
+      expect(find.text('10'), findsNWidgets(2));
 
       // Verify date
       expect(find.text('Friday • 15 May'), findsOneWidget);
@@ -64,6 +64,54 @@ void main() {
       final container = tester.widget<Container>(find.byType(Container).first);
       final decoration = container.decoration as BoxDecoration;
       expect(decoration.color, equals(Colors.white));
+    });
+
+    testWidgets('Flips seconds smoothly when currentTime updates without throwing ParentData errors', (tester) async {
+      final initialTime = DateTime(2026, 10, 28, 11, 12, 52);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                return SplitFlapClock(
+                  currentTime: initialTime,
+                  isDark: true,
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('52'), findsNWidgets(2));
+
+      // Advance time by 1 second to trigger the flip animation
+      final nextTime = DateTime(2026, 10, 28, 11, 12, 53);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SplitFlapClock(
+              currentTime: nextTime,
+              isDark: true,
+            ),
+          ),
+        ),
+      );
+
+      // Advance partially through the animation (100ms - Phase 1)
+      await tester.pump(const Duration(milliseconds: 100));
+      // In Phase 1, outgoing flap "52" and incoming "53" are rendered
+      expect(tester.takeException(), isNull);
+
+      // Advance into Phase 2 (250ms)
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(tester.takeException(), isNull);
+
+      // Settle animation to completion
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.text('53'), findsNWidgets(2));
     });
   });
 }
