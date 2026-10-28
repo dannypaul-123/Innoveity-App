@@ -174,6 +174,7 @@ class MainNavigationScreen extends StatelessWidget {
       showLeaveApprovalNotice: state.showLeaveApprovalNotice,
       onDismissLeaveNotice: state.dismissLeaveApprovalNotice,
       onOpenAnnouncements: () => _openAnnouncements(context),
+      getCurrentClockTime: () => state.currentClockTime,
     );
 
     final List<Widget> screens = [
@@ -208,6 +209,11 @@ class MainNavigationScreen extends StatelessWidget {
         isDarkMode: state.isDarkMode,
         onUpdateProfile: state.updateProfileDetails,
         onUpdateAvatar: state.updateAvatar,
+        currentClockTime: state.currentClockTime,
+        isCustomClock: state.isCustomClockActive,
+        onUpdateClockTime: state.setCustomClockTime,
+        onResetClockToLive: state.resetClockToLive,
+        getCurrentClockTime: () => state.currentClockTime,
       ),
     ];
 

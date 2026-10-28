@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
@@ -21,6 +22,11 @@ class ProfileScreen extends StatefulWidget {
     required String department,
   })? onUpdateProfile;
   final Function(String?)? onUpdateAvatar;
+  final DateTime? currentClockTime;
+  final bool isCustomClock;
+  final Function(DateTime)? onUpdateClockTime;
+  final VoidCallback? onResetClockToLive;
+  final DateTime Function()? getCurrentClockTime;
 
   const ProfileScreen({
     super.key,
@@ -31,6 +37,11 @@ class ProfileScreen extends StatefulWidget {
     required this.isDarkMode,
     this.onUpdateProfile,
     this.onUpdateAvatar,
+    this.currentClockTime,
+    this.isCustomClock = false,
+    this.onUpdateClockTime,
+    this.onResetClockToLive,
+    this.getCurrentClockTime,
   });
 
   @override
@@ -58,6 +69,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _localAvatarPath;
   bool _isFingerprintEnabled = false;
 
+  Timer? _profileClockTimer;
+  late DateTime _profileLiveClockTime;
+
   @override
   void initState() {
     super.initState();
@@ -71,6 +85,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _newPasswordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
     _checkFingerprintStatus();
+
+    _profileLiveClockTime = widget.getCurrentClockTime?.call() ?? widget.currentClockTime ?? DateTime.now();
+    _profileClockTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _profileLiveClockTime = widget.getCurrentClockTime?.call() ?? widget.currentClockTime ?? DateTime.now();
+        });
+      }
+    });
   }
 
   Future<void> _checkFingerprintStatus() async {
@@ -85,6 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void didUpdateWidget(covariant ProfileScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _profileLiveClockTime = widget.getCurrentClockTime?.call() ?? widget.currentClockTime ?? DateTime.now();
     if (oldWidget.userProfile != widget.userProfile) {
       if (!_isSavingInfo) {
         _nameController.text = widget.userProfile.name;
@@ -100,6 +124,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void dispose() {
+    _profileClockTimer?.cancel();
     _nameController.dispose();
     _phoneController.dispose();
     _collegeController.dispose();
@@ -1518,6 +1543,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         const SizedBox(height: 16),
 
+        // Clock Time & Date Settings Card
+        _buildClockSettingsCard(context, isDark),
+
+        const SizedBox(height: 16),
+
         // Preferences & Dark Mode Switch
         Card(
           child: Padding(
@@ -1637,6 +1667,526 @@ class _ProfileScreenState extends State<ProfileScreen> {
         const SizedBox(height: 2),
         Text(time, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
       ],
+    );
+  }
+
+  Widget _buildClockSettingsCard(BuildContext context, bool isDark) {
+    final textDark = isDark ? AppColors.textLight : AppColors.textDark;
+    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textMuted;
+
+    final rawHour = _profileLiveClockTime.hour;
+    final hour = rawHour % 12 == 0 ? 12 : rawHour % 12;
+    final h = hour.toString().padLeft(2, '0');
+    final m = _profileLiveClockTime.minute.toString().padLeft(2, '0');
+    final s = _profileLiveClockTime.second.toString().padLeft(2, '0');
+    final period = rawHour >= 12 ? 'PM' : 'AM';
+    final formattedTime = '$h:$m:$s $period';
+
+    const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    final weekdayStr = weekdays[_profileLiveClockTime.weekday - 1];
+    final monthStr = months[_profileLiveClockTime.month - 1];
+    final formattedDate = '$weekdayStr, $monthStr ${_profileLiveClockTime.day}, ${_profileLiveClockTime.year}';
+
+    final isCustom = widget.isCustomClock;
+
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEA580C).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.access_time_filled, size: 20, color: Color(0xFFEA580C)),
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'CLOCK TIME & DATE',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                            color: textDark,
+                          ),
+                        ),
+                        Text(
+                          'Dashboard & attendance system clock',
+                          style: TextStyle(fontSize: 10.5, color: textMuted),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isCustom
+                        ? const Color(0xFFFEF3C7)
+                        : (isDark ? const Color(0xFF064E3B) : const Color(0xFFDCFCE7)),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isCustom ? const Color(0xFFF59E0B) : const Color(0xFF10B981),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isCustom ? Icons.tune : Icons.check_circle_outline,
+                        size: 11,
+                        color: isCustom ? const Color(0xFFB45309) : const Color(0xFF059669),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isCustom ? 'CUSTOM CLOCK' : 'LIVE SYSTEM TIME',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.4,
+                          color: isCustom ? const Color(0xFFB45309) : const Color(0xFF059669),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 22, color: AppColors.borderLight),
+
+            // Live Time & Date Display Box
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  width: 1.2,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        formattedTime,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w900,
+                          fontFamily: 'monospace',
+                          letterSpacing: 1.5,
+                          color: Color(0xFFEA580C),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        formattedDate,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    tooltip: 'Edit Clock Time & Date',
+                    icon: const Icon(Icons.edit_calendar, color: Color(0xFFEA580C), size: 22),
+                    onPressed: () => _showEditClockModal(context),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Action Buttons Row
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showEditClockModal(context),
+                    icon: const Icon(Icons.edit_calendar_outlined, size: 16, color: Colors.white),
+                    label: const Text(
+                      'Edit Clock Time & Date',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEA580C),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+                if (isCustom) ...[
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      if (widget.onResetClockToLive != null) {
+                        widget.onResetClockToLive!();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Clock reset to original live system time.'),
+                            backgroundColor: AppColors.primaryPine,
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.restart_alt, size: 16, color: AppColors.alertText),
+                    label: const Text(
+                      'Reset to Live',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.alertText),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.alertBorder),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditClockModal(BuildContext context) {
+    final isDark = widget.isDarkMode;
+    final textDark = isDark ? AppColors.textLight : AppColors.textDark;
+    final textMuted = isDark ? AppColors.textLightMuted : AppColors.textMuted;
+
+    DateTime selectedDateTime = widget.getCurrentClockTime?.call() ?? widget.currentClockTime ?? DateTime.now();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (dialogCtx, setModalState) {
+            final rawHour = selectedDateTime.hour;
+            final hour = rawHour % 12 == 0 ? 12 : rawHour % 12;
+            final h = hour.toString().padLeft(2, '0');
+            final m = selectedDateTime.minute.toString().padLeft(2, '0');
+            final period = rawHour >= 12 ? 'PM' : 'AM';
+            final timeDisplay = '$h:$m $period';
+
+            const months = [
+              'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+            ];
+            const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            final dateDisplay = '${weekdays[selectedDateTime.weekday - 1]}, ${months[selectedDateTime.month - 1]} ${selectedDateTime.day}, ${selectedDateTime.year}';
+
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 18,
+                right: 18,
+                top: 18,
+                bottom: MediaQuery.of(dialogCtx).viewInsets.bottom + 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[400],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.edit_calendar, color: Color(0xFFEA580C), size: 22),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Edit Clock Time & Date',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: textDark,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    'Customize the clock time and date displayed across the dashboard and attendance tracking.',
+                    style: TextStyle(fontSize: 11.5, color: textMuted),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Preview Card of selected target
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF0F172A) : const Color(0xFFFFF7ED),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF9A3412) : const Color(0xFFFFD4C4),
+                        width: 1.2,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Selected Clock Target',
+                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFEA580C)),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              timeDisplay,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                                fontFamily: 'monospace',
+                                color: Color(0xFFEA580C),
+                              ),
+                            ),
+                            Text(
+                              dateDisplay,
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textDark),
+                            ),
+                          ],
+                        ),
+                        const Icon(Icons.alarm_on, size: 36, color: Color(0xFFEA580C)),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Pick Date Tile
+                  ListTile(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                    ),
+                    tileColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                    leading: const Icon(Icons.calendar_today, color: AppColors.primaryPine),
+                    title: const Text('Change Date', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                    subtitle: Text(dateDisplay, style: TextStyle(fontSize: 11, color: textMuted)),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    onTap: () async {
+                      DateTime initD = selectedDateTime;
+                      if (initD.isBefore(DateTime(2020))) initD = DateTime(2020);
+                      if (initD.isAfter(DateTime(2035))) initD = DateTime(2035);
+                      final pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: initD,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2035),
+                      );
+                      if (pickedDate != null) {
+                        setModalState(() {
+                          selectedDateTime = DateTime(
+                            pickedDate.year,
+                            pickedDate.month,
+                            pickedDate.day,
+                            selectedDateTime.hour,
+                            selectedDateTime.minute,
+                            selectedDateTime.second,
+                          );
+                        });
+                      }
+                    },
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Pick Time Tile
+                  ListTile(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+                    ),
+                    tileColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+                    leading: const Icon(Icons.schedule, color: Color(0xFFEA580C)),
+                    title: const Text('Change Time', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                    subtitle: Text(timeDisplay, style: TextStyle(fontSize: 11, color: textMuted)),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                    onTap: () async {
+                      final pickedTime = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay(
+                          hour: selectedDateTime.hour,
+                          minute: selectedDateTime.minute,
+                        ),
+                      );
+                      if (pickedTime != null) {
+                        setModalState(() {
+                          selectedDateTime = DateTime(
+                            selectedDateTime.year,
+                            selectedDateTime.month,
+                            selectedDateTime.day,
+                            pickedTime.hour,
+                            pickedTime.minute,
+                            0,
+                          );
+                        });
+                      }
+                    },
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // Quick Adjustments Chips
+                  Text(
+                    'QUICK TIME ADJUSTMENTS',
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.6, color: textMuted),
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      ActionChip(
+                        label: const Text('-1 Hour', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        onPressed: () {
+                          setModalState(() {
+                            selectedDateTime = selectedDateTime.subtract(const Duration(hours: 1));
+                          });
+                        },
+                      ),
+                      ActionChip(
+                        label: const Text('+1 Hour', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        onPressed: () {
+                          setModalState(() {
+                            selectedDateTime = selectedDateTime.add(const Duration(hours: 1));
+                          });
+                        },
+                      ),
+                      ActionChip(
+                        label: const Text('+1 Day', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        onPressed: () {
+                          setModalState(() {
+                            selectedDateTime = selectedDateTime.add(const Duration(days: 1));
+                          });
+                        },
+                      ),
+                      ActionChip(
+                        label: const Text('Reset to Device Now', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F766E))),
+                        backgroundColor: const Color(0xFFCCFBF1),
+                        onPressed: () {
+                          setModalState(() {
+                            selectedDateTime = DateTime.now();
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Bottom Action Buttons
+                  Row(
+                    children: [
+                      if (widget.isCustomClock)
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              if (widget.onResetClockToLive != null) {
+                                widget.onResetClockToLive!();
+                              }
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Clock reset to original live system time.'),
+                                  backgroundColor: AppColors.primaryPine,
+                                ),
+                              );
+                            },
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: AppColors.alertBorder),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            child: const Text(
+                              'Reset to Live',
+                              style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.alertText),
+                            ),
+                          ),
+                        ),
+                      if (widget.isCustomClock) const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            if (widget.onUpdateClockTime != null) {
+                              widget.onUpdateClockTime!(selectedDateTime);
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Clock updated to $timeDisplay ($dateDisplay)!'),
+                                backgroundColor: AppColors.primaryPine,
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFEA580C),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: const Text(
+                            'Apply Custom Clock',
+                            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

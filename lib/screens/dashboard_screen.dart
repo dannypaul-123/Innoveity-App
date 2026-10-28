@@ -5,7 +5,6 @@ import '../models/app_models.dart';
 import '../services/push_notification_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_avatar.dart';
-import '../widgets/split_flap_clock.dart';
 
 class DashboardScreen extends StatefulWidget {
   final List<TaskItem> tasks;
@@ -30,6 +29,7 @@ class DashboardScreen extends StatefulWidget {
   final bool showLeaveApprovalNotice;
   final VoidCallback? onDismissLeaveNotice;
   final VoidCallback? onOpenAnnouncements;
+  final DateTime Function()? getCurrentClockTime;
 
   const DashboardScreen({
     super.key,
@@ -55,6 +55,7 @@ class DashboardScreen extends StatefulWidget {
     this.latestApprovedLeave,
     this.showLeaveApprovalNotice = false,
     this.onDismissLeaveNotice,
+    this.getCurrentClockTime,
   });
 
   @override
@@ -68,14 +69,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _currentTime = DateTime.now();
+    _currentTime = widget.getCurrentClockTime?.call() ?? DateTime.now();
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
         setState(() {
-          _currentTime = DateTime.now();
+          _currentTime = widget.getCurrentClockTime?.call() ?? DateTime.now();
         });
       }
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant DashboardScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.getCurrentClockTime != null) {
+      _currentTime = widget.getCurrentClockTime!();
+    }
   }
 
   @override
@@ -317,11 +326,61 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ],
     );
 
-    final clockSection = SizedBox(
+    final clockSection = Container(
       width: isCompact ? double.infinity : null,
-      child: SplitFlapClock(
-        currentTime: _currentTime,
-        isDark: isDark,
+      constraints: isCompact ? null : const BoxConstraints(minWidth: 170, maxWidth: 220),
+      padding: EdgeInsets.symmetric(horizontal: isCompact ? 16 : 14, vertical: isCompact ? 14 : 10),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0F172A).withValues(alpha: 0.7) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  _formatLiveClockTime(),
+                  style: TextStyle(
+                    fontSize: isCompact ? 52 : 36,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: 'monospace',
+                    letterSpacing: 2.0,
+                    color: const Color(0xFFEA580C),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              _formatLiveClockDate(),
+              style: TextStyle(
+                fontSize: isCompact ? 13 : 11.5,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.4,
+                color: isDark ? AppColors.textLightMuted : AppColors.textMuted,
+              ),
+            ),
+          ),
+        ],
       ),
     );
 

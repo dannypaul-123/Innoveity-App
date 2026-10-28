@@ -45,6 +45,12 @@ class AppState extends ChangeNotifier {
   String? _lastWorkLocation;
   Timer? _timer;
 
+  // Custom clock offset state
+  Duration _customClockOffset = Duration.zero;
+  Duration get customClockOffset => _customClockOffset;
+  bool get isCustomClockActive => _customClockOffset != Duration.zero;
+  DateTime get currentClockTime => DateTime.now().add(_customClockOffset);
+
   // Multi-employee attendance registry (keyed by clean email)
   final Map<String, EmployeeAttendanceRecord> _employeeAttendanceMap = {};
   Map<String, EmployeeAttendanceRecord> get employeeAttendanceMap => Map.unmodifiable(_employeeAttendanceMap);
@@ -224,7 +230,37 @@ class AppState extends ChangeNotifier {
     loadSalaryTemplates();
     _loadSavedGeofenceSettings();
     _loadAllEmployeesAttendanceFromStorage();
+    _loadSavedClockOffset();
     refreshApiData();
+  }
+
+  Future<void> _loadSavedClockOffset() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final offsetMs = prefs.getInt('custom_clock_offset_ms');
+      if (offsetMs != null && offsetMs != 0) {
+        _customClockOffset = Duration(milliseconds: offsetMs);
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> setCustomClockTime(DateTime customDateTime) async {
+    _customClockOffset = customDateTime.difference(DateTime.now());
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('custom_clock_offset_ms', _customClockOffset.inMilliseconds);
+    } catch (_) {}
+  }
+
+  Future<void> resetClockToLive() async {
+    _customClockOffset = Duration.zero;
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('custom_clock_offset_ms');
+    } catch (_) {}
   }
 
   Future<void> _loadSavedGeofenceSettings() async {
@@ -736,7 +772,7 @@ class AppState extends ChangeNotifier {
   void checkAutoClockOut() {
     if (!_isClockedIn) return;
 
-    final now = DateTime.now();
+    final now = currentClockTime;
     final cutoffHour = autoClockOutCutoffHour;
 
     if (now.hour >= cutoffHour) {
