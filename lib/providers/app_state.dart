@@ -8,23 +8,6 @@ import '../services/push_notification_service.dart';
 import '../core/storage/salary_template_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Result of validating a Google Sign-In attempt against CRM company policy.
-class GoogleSignInValidationResult {
-  final bool canSync;
-  final String? errorTitle;
-  final String? errorMessage;
-  final String? assignedCompanyEmail;
-  final UserProfile? profile;
-
-  const GoogleSignInValidationResult({
-    required this.canSync,
-    this.errorTitle,
-    this.errorMessage,
-    this.assignedCompanyEmail,
-    this.profile,
-  });
-}
-
 class AppState extends ChangeNotifier {
   bool _isLoggedIn = false;
   int _currentTab = 0; // 0: Dashboard, 1: Tasks, 2: Calendar, 3: Leaves, 4: Profile
@@ -1131,76 +1114,6 @@ class AppState extends ChangeNotifier {
       }
     }
     return null;
-  }
-
-  /// Validates whether a Google Sign-In attempt can sync in:
-  /// 1. Google sign in only syncs in when company email and employee or intern email matches the same.
-  /// 2. If a custom company mail is assigned to the user, they must log in using username and password.
-  static GoogleSignInValidationResult validateGoogleSignIn(String emailOrIdentifier) {
-    final cleanInput = emailOrIdentifier.trim().toLowerCase();
-    if (cleanInput.isEmpty) {
-      return const GoogleSignInValidationResult(
-        canSync: false,
-        errorTitle: 'Google Account Required',
-        errorMessage: 'Please enter or select a valid Google account.',
-      );
-    }
-
-    final profile = findEmployeeInCrm(cleanInput);
-    if (profile == null) {
-      return GoogleSignInValidationResult(
-        canSync: false,
-        errorTitle: 'Google Sign-In Denied',
-        errorMessage: 'Account "$cleanInput" is not registered in the CRM backend. Google Sign-In only syncs for registered employees and interns.',
-      );
-    }
-
-    // 1. Check if custom company mail is assigned to the user
-    final String? assignedCompanyMail = profile.companyEmail ??
-        (profile.email.endsWith('@enterprise-crm.com') ? profile.email : null);
-    final String? employeePersonalMail = profile.personalEmail ??
-        (profile.email.endsWith('@gmail.com') ? profile.email : null);
-
-    final bool hasCustomCompanyMail = profile.hasCustomCompanyEmail ||
-        (assignedCompanyMail != null &&
-            assignedCompanyMail.isNotEmpty &&
-            !assignedCompanyMail.endsWith('@gmail.com') &&
-            !assignedCompanyMail.endsWith('@googlemail.com')) ||
-        (assignedCompanyMail != null &&
-            employeePersonalMail != null &&
-            assignedCompanyMail.toLowerCase() != employeePersonalMail.toLowerCase());
-
-    if (hasCustomCompanyMail) {
-      final customMail = assignedCompanyMail ?? profile.email;
-      return GoogleSignInValidationResult(
-        canSync: false,
-        errorTitle: 'Custom Company Mail Assigned',
-        errorMessage:
-            'A custom company email ($customMail) is assigned to your account.\n\nCorporate security policy requires logging in using your username and password.',
-        assignedCompanyEmail: customMail,
-        profile: profile,
-      );
-    }
-
-    // 2. Make sure company email and employee or intern email match the exact same
-    final String compEmail = (profile.companyEmail ?? profile.email).trim().toLowerCase();
-    final String empEmail = (profile.personalEmail ?? profile.email).trim().toLowerCase();
-
-    if (compEmail != empEmail || cleanInput != compEmail) {
-      return GoogleSignInValidationResult(
-        canSync: false,
-        errorTitle: 'Email Mismatch',
-        errorMessage:
-            'Google Sign-In only syncs when company email and employee or intern email match the same.\n\nRegistered Company Email: $compEmail\nGoogle Sign-In Attempt: $cleanInput\n\nPlease log in using your company credentials.',
-        assignedCompanyEmail: compEmail,
-        profile: profile,
-      );
-    }
-
-    return GoogleSignInValidationResult(
-      canSync: true,
-      profile: profile,
-    );
   }
 
   bool get isAdmin {
