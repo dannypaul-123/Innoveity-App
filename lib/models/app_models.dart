@@ -353,15 +353,23 @@ class LeaveBalance {
   int get daysLeft => totalDays - usedDays;
 
   factory LeaveBalance.fromJson(Map<String, dynamic> json) {
-    String typeName = 'WFH';
-    if (json['leaveType'] != null && json['leaveType'] is Map && json['leaveType']['name'] != null) {
-      typeName = json['leaveType']['name'].toString();
-    } else if (json['name'] != null) {
-      typeName = json['name'].toString();
-    } else if (json['code'] != null) {
+    String typeName = '';
+    if (json['leaveType'] != null && json['leaveType'] is Map) {
+      final lt = json['leaveType'];
+      typeName = (lt['code'] ?? lt['name'] ?? lt['type'])?.toString() ?? '';
+    } else if (json['code'] != null && json['code'].toString().isNotEmpty) {
       typeName = json['code'].toString();
-    } else if (json['type'] != null) {
+    } else if (json['name'] != null && json['name'].toString().isNotEmpty) {
+      typeName = json['name'].toString();
+    } else if (json['type'] != null && json['type'].toString().isNotEmpty) {
       typeName = json['type'].toString();
+    }
+    if (typeName.isEmpty) {
+      typeName = 'Leave';
+    }
+    // Normalize WFH variations
+    if (typeName.toUpperCase() == 'WORK FROM HOME') {
+      typeName = 'WFH';
     }
 
     int total = int.tryParse(

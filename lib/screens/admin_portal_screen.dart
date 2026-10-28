@@ -8922,7 +8922,9 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> with SingleTicker
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
-                    value: _internStatusFilter,
+                    value: const ['All Statuses', 'Active', 'On Leave'].contains(_internStatusFilter)
+                        ? _internStatusFilter
+                        : 'All Statuses',
                     icon: const Icon(Icons.arrow_drop_down_rounded, size: 20),
                     dropdownColor: isDark ? AppColors.cardDark : Colors.white,
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A)),
@@ -9270,7 +9272,9 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> with SingleTicker
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
-                    value: _employeeStatusFilter,
+                    value: const ['All Statuses', 'Active', 'On Leave'].contains(_employeeStatusFilter)
+                        ? _employeeStatusFilter
+                        : 'All Statuses',
                     icon: const Icon(Icons.arrow_drop_down_rounded, size: 20),
                     dropdownColor: isDark ? AppColors.cardDark : Colors.white,
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF0F172A)),

@@ -50,6 +50,7 @@ class _AttendancePortalScreenState extends State<AttendancePortalScreen> {
     'All Statuses',
     'PRESENT',
     'WORK FROM HOME',
+    'WFH',
     'LATE',
     'HALF DAY',
     'ABSENT',
@@ -1455,6 +1456,22 @@ class _AttendancePortalScreenState extends State<AttendancePortalScreen> {
     Color textPrimary,
     Color cardBg,
   ) {
+    final uniqueItems = <String>[];
+    final seen = <String>{};
+    for (final i in items) {
+      if (seen.add(i)) uniqueItems.add(i);
+    }
+    String effectiveValue = value;
+    if (!uniqueItems.contains(effectiveValue)) {
+      if (effectiveValue.toUpperCase() == 'WFH' && uniqueItems.contains('WORK FROM HOME')) {
+        effectiveValue = 'WORK FROM HOME';
+      } else if (effectiveValue.toUpperCase() == 'WORK FROM HOME' && uniqueItems.contains('WFH')) {
+        effectiveValue = 'WFH';
+      } else if (uniqueItems.isNotEmpty) {
+        effectiveValue = uniqueItems.first;
+      }
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1478,12 +1495,12 @@ class _AttendancePortalScreenState extends State<AttendancePortalScreen> {
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
-              value: value,
+              value: effectiveValue,
               isExpanded: true,
               dropdownColor: cardBg,
               icon: Icon(Icons.keyboard_arrow_down, size: 16, color: textMuted),
               style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: textPrimary),
-              items: items.map((i) => DropdownMenuItem(value: i, child: Text(i, overflow: TextOverflow.ellipsis))).toList(),
+              items: uniqueItems.map((i) => DropdownMenuItem(value: i, child: Text(i, overflow: TextOverflow.ellipsis))).toList(),
               onChanged: onChanged,
             ),
           ),

@@ -431,7 +431,32 @@ class _LeavesScreenState extends State<LeavesScreen> {
 
   void _showApplyLeaveModal(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    String selectedType = 'WFH';
+
+    // Deduplicate leave balances by type to prevent duplicate DropdownMenuItem assertions
+    final uniqueBalances = <LeaveBalance>[];
+    final seenTypes = <String>{};
+    for (final b in widget.balances) {
+      final clean = b.type.trim();
+      if (clean.isNotEmpty && seenTypes.add(clean)) {
+        uniqueBalances.add(b);
+      }
+    }
+    if (uniqueBalances.isEmpty) {
+      uniqueBalances.addAll([
+        LeaveBalance(type: 'WFH', totalDays: 12, usedDays: 0),
+        LeaveBalance(type: 'Casual Leave', totalDays: 6, usedDays: 0),
+        LeaveBalance(type: 'Sick Leave', totalDays: 6, usedDays: 0),
+        LeaveBalance(type: 'Earned Leave', totalDays: 15, usedDays: 0),
+      ]);
+    }
+
+    // Determine initial selection matching WFH or first available balance
+    final initialSelection = uniqueBalances.firstWhere(
+      (b) => b.type.toUpperCase() == 'WFH' || b.type.toUpperCase().contains('WORK FROM HOME'),
+      orElse: () => uniqueBalances.first,
+    ).type;
+
+    String selectedType = initialSelection;
     final reasonController = TextEditingController();
     final DateTime startDate = DateTime.now().add(const Duration(days: 1));
 
@@ -465,10 +490,15 @@ class _LeavesScreenState extends State<LeavesScreen> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                initialValue: selectedType,
+                initialValue: uniqueBalances.any((b) => b.type == selectedType)
+                    ? selectedType
+                    : uniqueBalances.first.type,
                 decoration: const InputDecoration(labelText: 'Leave Category', border: OutlineInputBorder()),
-                items: widget.balances
-                    .map((b) => DropdownMenuItem(value: b.type, child: Text('${b.type} (${b.daysLeft} left)', overflow: TextOverflow.ellipsis)))
+                items: uniqueBalances
+                    .map((b) => DropdownMenuItem(
+                          value: b.type,
+                          child: Text('${b.type} (${b.daysLeft} left)', overflow: TextOverflow.ellipsis),
+                        ))
                     .toList(),
                 onChanged: (val) {
                   if (val != null) setModalState(() => selectedType = val);

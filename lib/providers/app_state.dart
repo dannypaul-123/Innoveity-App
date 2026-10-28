@@ -1903,8 +1903,12 @@ class AppState extends ChangeNotifier {
 
     final apiBalances = await ApiService.fetchLeaveBalances();
     if (apiBalances.isNotEmpty) {
+      final uniqueMap = <String, LeaveBalance>{};
+      for (final b in apiBalances) {
+        uniqueMap[b.type.trim()] = b;
+      }
       leaveBalances.clear();
-      leaveBalances.addAll(apiBalances);
+      leaveBalances.addAll(uniqueMap.values);
     }
 
     final apiTickets = await ApiService.fetchTickets();

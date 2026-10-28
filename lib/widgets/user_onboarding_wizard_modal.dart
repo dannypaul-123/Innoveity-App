@@ -1587,7 +1587,11 @@ class _UserOnboardingWizardModalState extends State<UserOnboardingWizardModal> {
                 onChanged: (v) => setState(() => _reportingManager = v ?? 'System Admin'),
               );
               final workModeField = DropdownButtonFormField<String>(
-                initialValue: _workMode,
+                initialValue: ['In-Office', 'Work From Home (WFH)', 'Hybrid'].contains(_workMode)
+                    ? _workMode
+                    : (_workMode.toUpperCase().contains('WFH') || _workMode.toUpperCase().contains('HOME')
+                        ? 'Work From Home (WFH)'
+                        : 'In-Office'),
                 decoration: InputDecoration(
                   labelText: 'Work Mode',
                   labelStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
