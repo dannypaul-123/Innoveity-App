@@ -7,6 +7,7 @@ import '../screens/announcements_screen.dart';
 import '../screens/daily_work_logs_screen.dart';
 import '../screens/ticket_desk_screen.dart';
 import '../screens/asset_management_screen.dart';
+import '../screens/enterprise_projects_screen.dart';
 import 'app_avatar.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -160,6 +161,29 @@ class AppDrawer extends StatelessWidget {
                     isDark: isDark,
                     brandAccent: brandAccent,
                     onTap: () => _goToRootTab(context, 0),
+                  ),
+
+                  // Workspaces: Projects
+                  _buildNavItem(
+                    context: context,
+                    icon: Icons.folder_open_rounded,
+                    label: 'Projects',
+                    isActive: activeRoute == 'projects',
+                    isDark: isDark,
+                    brandAccent: const Color(0xFFEA580C),
+                    solidActive: true,
+                    onTap: () {
+                      _navigate(context, () {
+                        if (activeRoute != 'projects') {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => EnterpriseProjectsScreen(state: state),
+                            ),
+                          );
+                        }
+                      });
+                    },
                   ),
 
                   // 2. Active Board

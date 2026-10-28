@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../models/app_models.dart';
+import '../models/project_models.dart';
 import '../services/api_service.dart';
 import '../services/geofence_service.dart';
 import '../services/push_notification_service.dart';
@@ -231,7 +232,312 @@ class AppState extends ChangeNotifier {
     _loadSavedGeofenceSettings();
     _loadAllEmployeesAttendanceFromStorage();
     _loadSavedClockOffset();
+    _loadSavedProjects();
     refreshApiData();
+  }
+
+  // Enterprise Projects State
+  List<EnterpriseProject> _projects = [
+    EnterpriseProject(
+      id: 'PRJ-1001',
+      code: 'PRJ-101',
+      name: 'Enterprise Mobile CRM App',
+      description:
+          'Full lifecycle mobile application for employee portal, geofencing, and project tracking.',
+      projectType: 'Client Project',
+      priority: 'Medium',
+      status: 'Active',
+      startDate: DateTime.now().subtract(const Duration(days: 3)),
+      endDate: DateTime.now().add(const Duration(days: 27)),
+      projectLeaderId: 'USR-ADMIN',
+      projectLeaderName: 'Dany',
+      assignedTeam: 'Mobile Application Development',
+      memberIds: [
+        'danielpaul@enterprise-crm.com',
+        'dp0345217@gmail.com',
+        'antorajan501@gmail.com',
+      ],
+      memberNames: ['Daniel Paul', 'Anto A'],
+      workflowStages: [
+        const ProjectWorkflowStage(
+          id: 'stg-1',
+          name: 'To Do',
+          order: 1,
+          colorHex: '#64748B',
+          status: 'APPROVED',
+        ),
+        const ProjectWorkflowStage(
+          id: 'stg-2',
+          name: 'In Progress',
+          order: 2,
+          colorHex: '#F59E0B',
+          status: 'ACTIVE',
+        ),
+        const ProjectWorkflowStage(
+          id: 'stg-3',
+          name: 'In Review',
+          order: 3,
+          requiresApproval: true,
+          colorHex: '#8B5CF6',
+          status: 'PENDING',
+        ),
+        const ProjectWorkflowStage(
+          id: 'stg-4',
+          name: 'Done',
+          order: 4,
+          isFinalCompletedStage: true,
+          colorHex: '#10B981',
+          status: 'PENDING',
+        ),
+      ],
+      currentStageIndex: 1,
+      requiresAdminApproval: true,
+      createdAt: DateTime.now().subtract(const Duration(days: 3)),
+      updatedAt: DateTime.now(),
+    ),
+  ];
+  List<EnterpriseProject> get projects => List.unmodifiable(_projects);
+
+  List<EnterpriseProject> get activeProjects =>
+      _projects.where((p) => p.status == 'Active').toList();
+  List<EnterpriseProject> get overdueProjects => _projects.where((p) {
+        if (p.isCompleted) return false;
+        return p.status == 'Overdue' || p.endDate.isBefore(DateTime.now());
+      }).toList();
+  List<EnterpriseProject> get completedProjects =>
+      _projects.where((p) => p.isCompleted || p.status == 'Completed').toList();
+  List<EnterpriseProject> get onHoldProjects =>
+      _projects.where((p) => p.status == 'On Hold').toList();
+  List<EnterpriseProject> get archivedProjects =>
+      _projects.where((p) => p.status == 'Archived').toList();
+  List<EnterpriseProject> get draftProjects =>
+      _projects.where((p) => p.status == 'Draft').toList();
+  List<EnterpriseProject> get scheduledProjects =>
+      _projects.where((p) => p.status == 'Scheduled').toList();
+  List<EnterpriseProject> get awaitingApprovalProjects =>
+      _projects.where((p) => p.isAwaitingApproval).toList();
+
+  List<EnterpriseProject> getProjectsForUser(String? emailOrId) {
+    if (isAdmin) return projects;
+    if (emailOrId == null || emailOrId.isEmpty) return [];
+    return _projects.where((p) => p.isMember(emailOrId)).toList();
+  }
+
+  Future<void> _loadSavedProjects() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString('enterprise_projects_json');
+      if (jsonStr != null && jsonStr.isNotEmpty) {
+        final List decoded = jsonDecode(jsonStr);
+        final loaded = decoded
+            .map((e) => EnterpriseProject.fromJson(Map<String, dynamic>.from(e)))
+            .toList();
+        if (loaded.isNotEmpty) {
+          _projects = loaded;
+          notifyListeners();
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _persistProjects() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final encoded = jsonEncode(_projects.map((p) => p.toJson()).toList());
+      await prefs.setString('enterprise_projects_json', encoded);
+    } catch (_) {}
+  }
+
+  Future<void> addEnterpriseProject(EnterpriseProject project) async {
+    _projects.insert(0, project);
+    await _persistProjects();
+    notifyListeners();
+  }
+
+  Future<void> updateEnterpriseProject(EnterpriseProject project) async {
+    final idx = _projects.indexWhere((p) => p.id == project.id);
+    if (idx != -1) {
+      _projects[idx] = project.copyWith(updatedAt: DateTime.now());
+      await _persistProjects();
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteEnterpriseProject(String projectId) async {
+    _projects.removeWhere((p) => p.id == projectId);
+    await _persistProjects();
+    notifyListeners();
+  }
+
+  Future<void> advanceProjectStage({required String projectId, String? userEmail}) async {
+    final idx = _projects.indexWhere((p) => p.id == projectId);
+    if (idx == -1) return;
+    final project = _projects[idx];
+    if (project.currentStageIndex >= project.workflowStages.length - 1) return;
+
+    final currentStage = project.currentStage;
+    if (currentStage.requiresApproval && currentStage.status != 'APPROVED') {
+      await submitStageForApproval(
+        projectId: projectId,
+        submittedBy: userEmail ?? userProfile.name,
+      );
+      return;
+    }
+
+    final nextIndex = project.currentStageIndex + 1;
+    final updatedStages = List<ProjectWorkflowStage>.from(project.workflowStages);
+
+    updatedStages[project.currentStageIndex] =
+        updatedStages[project.currentStageIndex].copyWith(status: 'APPROVED');
+
+    final nextStage = updatedStages[nextIndex];
+    if (nextStage.requiresApproval) {
+      updatedStages[nextIndex] = nextStage.copyWith(
+        status: 'AWAITING_APPROVAL',
+        submittedAt: DateTime.now(),
+        submittedBy: userEmail ?? userProfile.name,
+      );
+    } else if (nextStage.isFinalCompletedStage) {
+      updatedStages[nextIndex] = nextStage.copyWith(status: 'APPROVED');
+    } else {
+      updatedStages[nextIndex] = nextStage.copyWith(status: 'ACTIVE');
+    }
+
+    final isAllDone = nextIndex == updatedStages.length - 1 &&
+        (updatedStages[nextIndex].status == 'APPROVED' ||
+            updatedStages[nextIndex].isFinalCompletedStage);
+
+    _projects[idx] = project.copyWith(
+      workflowStages: updatedStages,
+      currentStageIndex: nextIndex,
+      status: isAllDone ? 'Completed' : project.status,
+      updatedAt: DateTime.now(),
+    );
+    await _persistProjects();
+    notifyListeners();
+  }
+
+  Future<void> submitStageForApproval({
+    required String projectId,
+    required String submittedBy,
+  }) async {
+    final idx = _projects.indexWhere((p) => p.id == projectId);
+    if (idx == -1) return;
+    final project = _projects[idx];
+    final updatedStages = List<ProjectWorkflowStage>.from(project.workflowStages);
+    final cur = project.currentStage;
+
+    updatedStages[project.currentStageIndex] = cur.copyWith(
+      status: 'AWAITING_APPROVAL',
+      submittedAt: DateTime.now(),
+      submittedBy: submittedBy,
+    );
+
+    _projects[idx] = project.copyWith(
+      workflowStages: updatedStages,
+      updatedAt: DateTime.now(),
+    );
+    await _persistProjects();
+    notifyListeners();
+  }
+
+  Future<void> approveProjectStage({
+    required String projectId,
+    required String approvedBy,
+  }) async {
+    final idx = _projects.indexWhere((p) => p.id == projectId);
+    if (idx == -1) return;
+    final project = _projects[idx];
+    final updatedStages = List<ProjectWorkflowStage>.from(project.workflowStages);
+    final cur = project.currentStage;
+
+    updatedStages[project.currentStageIndex] = cur.copyWith(
+      status: 'APPROVED',
+      approvedBy: approvedBy,
+      approvedAt: DateTime.now(),
+      rejectionReason: null,
+    );
+
+    int nextIndex = project.currentStageIndex;
+    String newStatus = project.status;
+
+    if (project.currentStageIndex < updatedStages.length - 1) {
+      nextIndex = project.currentStageIndex + 1;
+      final nextStage = updatedStages[nextIndex];
+      if (nextStage.requiresApproval) {
+        updatedStages[nextIndex] = nextStage.copyWith(
+          status: 'AWAITING_APPROVAL',
+          submittedAt: DateTime.now(),
+          submittedBy: approvedBy,
+        );
+      } else if (nextStage.isFinalCompletedStage) {
+        updatedStages[nextIndex] = nextStage.copyWith(status: 'APPROVED');
+        newStatus = 'Completed';
+      } else {
+        updatedStages[nextIndex] = nextStage.copyWith(status: 'ACTIVE');
+      }
+    } else {
+      newStatus = 'Completed';
+    }
+
+    _projects[idx] = project.copyWith(
+      workflowStages: updatedStages,
+      currentStageIndex: nextIndex,
+      status: newStatus,
+      updatedAt: DateTime.now(),
+    );
+    await _persistProjects();
+    notifyListeners();
+  }
+
+  Future<void> rejectProjectStage({
+    required String projectId,
+    required String rejectedBy,
+    required String rejectionReason,
+  }) async {
+    final idx = _projects.indexWhere((p) => p.id == projectId);
+    if (idx == -1) return;
+    final project = _projects[idx];
+    final updatedStages = List<ProjectWorkflowStage>.from(project.workflowStages);
+    final cur = project.currentStage;
+
+    updatedStages[project.currentStageIndex] = cur.copyWith(
+      status: 'REJECTED_REDO',
+      rejectedBy: rejectedBy,
+      rejectedAt: DateTime.now(),
+      rejectionReason: rejectionReason,
+    );
+
+    _projects[idx] = project.copyWith(
+      workflowStages: updatedStages,
+      updatedAt: DateTime.now(),
+    );
+    await _persistProjects();
+    notifyListeners();
+  }
+
+  Future<void> resubmitProjectStage({
+    required String projectId,
+    required String resubmittedBy,
+  }) async {
+    final idx = _projects.indexWhere((p) => p.id == projectId);
+    if (idx == -1) return;
+    final project = _projects[idx];
+    final updatedStages = List<ProjectWorkflowStage>.from(project.workflowStages);
+    final cur = project.currentStage;
+
+    updatedStages[project.currentStageIndex] = cur.copyWith(
+      status: 'AWAITING_APPROVAL',
+      submittedAt: DateTime.now(),
+      submittedBy: resubmittedBy,
+    );
+
+    _projects[idx] = project.copyWith(
+      workflowStages: updatedStages,
+      updatedAt: DateTime.now(),
+    );
+    await _persistProjects();
+    notifyListeners();
   }
 
   Future<void> _loadSavedClockOffset() async {

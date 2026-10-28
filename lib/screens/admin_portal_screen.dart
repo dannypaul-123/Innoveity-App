@@ -13,6 +13,7 @@ import '../services/push_notification_service.dart';
 import 'salary_templates_screen.dart';
 import '../widgets/task_velocity_chart_card.dart';
 import '../widgets/live_attendance_osm_map.dart';
+import 'enterprise_projects_screen.dart';
 
 class HolidayEntry {
   final String id;
@@ -221,7 +222,7 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> with SingleTicker
   void initState() {
     super.initState();
     widget.state.addListener(_onAppStateChanged);
-    _tabController = TabController(length: 14, vsync: this);
+    _tabController = TabController(length: 15, vsync: this);
     _tabController.addListener(() {
       if (mounted) setState(() {});
     });
@@ -1320,10 +1321,10 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    if (_tabController.length != 14) {
-      final oldIndex = _tabController.index.clamp(0, 13);
+    if (_tabController.length != 15) {
+      final oldIndex = _tabController.index.clamp(0, 14);
       _tabController.dispose();
-      _tabController = TabController(length: 14, vsync: this, initialIndex: oldIndex);
+      _tabController = TabController(length: 15, vsync: this, initialIndex: oldIndex);
       _tabController.addListener(() {
         if (mounted) setState(() {});
       });
@@ -1476,6 +1477,7 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> with SingleTicker
               _buildInternRegistryTab(isDark),
               _buildEmployeeRegistryTab(isDark),
               SalaryTemplatesBody(state: widget.state, isDark: isDark),
+              EnterpriseProjectsView(state: widget.state, isDark: isDark),
             ],
           ),
         ),
@@ -1930,6 +1932,9 @@ class _AdminPortalScreenState extends State<AdminPortalScreen> with SingleTicker
                   _buildAdminDrawerItem(context, 1, Icons.calendar_month_outlined, 'Work Calendar', isDark, brandAccent),
                   _buildAdminDrawerItem(context, 6, Icons.map_outlined, 'Live Attendance', isDark, brandAccent),
                   _buildAdminDrawerItem(context, 7, Icons.badge_outlined, 'Staff Dossiers', isDark, brandAccent),
+
+                  _buildDrawerSectionHeader('WORKSPACES', isDark),
+                  _buildAdminDrawerItem(context, 14, Icons.folder_open_rounded, 'Projects', isDark, const Color(0xFFEA580C)),
 
                   _buildDrawerSectionHeader('COMMUNICATION', isDark),
                   _buildAdminDrawerItem(context, 3, Icons.campaign_outlined, 'Announcements', isDark, const Color(0xFFEA580C)),
